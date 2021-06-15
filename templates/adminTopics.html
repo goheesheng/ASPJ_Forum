@@ -1,0 +1,73 @@
+{% extends "adminBase.html" %}
+{% block title %}Topics{% endblock %}
+
+{% block style %}
+<!-- <link rel="stylesheet" href="/static/styles/adminHome.css"> -->
+<link rel="stylesheet" href="/static/styles/postMeta.css">
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-md-12">
+      {{ flash() }}
+    </div>
+
+    <div class="col-md-3">
+      <div class="sticky-top">
+        <div>
+          <a href="/addTopic" class="btn btn-danger w-100" style="margin-top: 15px;">Add Topic</a>
+        </div>
+
+        <div class="mt-3" id="trending-topics">
+          <p class="font-weight-bold my-3">
+            Trending Topics
+          </p>
+
+          <hr class="mx-auto">
+
+          <p class="topic align-middle m-0">
+            <span>#1</span>
+            Python
+          </p>
+
+          <p class="topic align-middle m-0">
+            <span>#2</span>
+            Java
+          </p>
+
+          <p class="topic align-middle m-0">
+            <span>#3</span>
+            Stack
+          </p>
+        </div> <!--Trending Topics-->
+      </div> <!--Stick--->
+    </div> <!--Column-->
+
+ <!--For all the posts-->
+    <div class="col-md-9">
+
+        <div class="topics">
+
+            {% for topic in listOfTopics %}
+            <div class="col-md-6">
+              {% autoescape false %}
+               <a href="/adminIndivTopic/{{topic[1]}}"><p class="font-weight-bold" style="color:black;">{{topic[0]}}</p></a>
+               {% endautoescape %}
+              <hr>
+            </div>
+
+            {% endfor %}
+
+
+        </div>
+
+
+        <!-- <div>
+          <a href="#" class="btn btn-danger w-100">View more topics</a>
+        </div> -->
+    </div>
+
+  </div> <!--Row-->
+</div> <!--Container-->
+{% endblock %}

@@ -1,0 +1,82 @@
+hr {
+  border: 0;
+  width: 95%;
+  background-color:#aaa;
+  height: 0.9px;
+  margin: 0;
+}
+
+/* Comment */
+.comment p {
+  margin: 0px;
+}
+
+.comment-meta {
+  font-size: 14px;
+  font-style: italic;
+  margin-top: 0;
+  margin-bottom: 5px;
+  color: #868e96;
+}
+
+.comment-meta > a {
+  text-decoration: none;
+  color: #212529;
+}
+
+.comment-meta > a:focus, .comment-meta > a:hover {
+  text-decoration: underline;
+  color: #0085A1;
+}
+
+.comment > .sub-comment {
+  border-left: 3px solid #ccc;
+  margin-top: 10px;
+  padding: 5px 10px;
+}
+
+/* Post */
+
+.post-preview, .comment {
+  background-color: #fff;
+  margin: 15px 0px;
+  padding: 10px 25px;
+  width: 100%;
+}
+
+.post-preview:hover {
+  background-color: #f8f8f8;
+}
+
+.post-preview {
+  color: #212529;
+}
+
+.post-preview > .post-title {
+  font-size: 25px;
+  margin-top: 25px;
+  margin-bottom: 10px;
+}
+
+.post-preview > .post-text {
+  font-size: 16px;
+  font-weight: 400;
+  margin: 0 0 10px;
+}
+
+.post-preview > .post-meta {
+  font-size: 14px;
+  font-style: italic;
+  margin-top: 0;
+  color: #868e96;
+}
+
+.post-preview > .post-meta > a {
+  text-decoration: none;
+  color: #212529;
+}
+
+.post-preview > .post-meta > a:focus, .post-preview > .post-meta > a:hover {
+  text-decoration: underline;
+  color: #0085A1;
+}

@@ -1,0 +1,18 @@
+.input-group-append  button:focus {
+  box-shadow: none;
+  border: 0;
+}
+
+#searchQuery::placeholder,
+.input-group-append button .fa-search {
+  color: #999;
+}
+
+#searchQuery:focus {
+  box-shadow: none;
+  z-index: -1;
+}
+
+.input-group-append {
+  z-index: 2;
+}

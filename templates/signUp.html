@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Sign Up{% endblock %}
+{% block style %}{% endblock %}
+
+{% block content %}
+{% from "includes/_formhelper.html" import render_field %}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <h1>Sign Up</h1>
+
+      <form method="POST" class="mt-4">
+        <div class="form-group">
+          {{render_field(signUpForm.email, class= "form-control")}}
+        </div>
+
+        <div class="form-group">
+          {{render_field(signUpForm.username, class= "form-control")}}
+        </div>
+
+        <div class="form-group">
+          {{render_field(signUpForm.name, class= "form-control")}}
+        </div>
+
+        <div class="form-group">
+          {{render_field(signUpForm.dob, class= "form-control", type="date")}}
+        </div>
+
+        <div class="form-group">
+          {{render_field(signUpForm.password, class= "form-control")}}
+        </div>
+
+        <div class="form-group">
+          {{render_field(signUpForm.confirmPassword, class= "form-control")}}
+        </div>
+
+        <p>Already have an account? <a href="/login">Login</a></p>
+
+        <div class="form-group">
+          <input type="submit" class="btn btn-success">
+        </div>
+      </form>
+    </div> <!--Column-->
+  </div> <!--Row-->
+</div> <!--Container-->
+{% endblock %}

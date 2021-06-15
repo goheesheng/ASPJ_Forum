@@ -1,0 +1,75 @@
+{% extends "adminBase.html" %}
+{% block title %}{{topic}}{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="/static/styles/home.css">
+<link rel="stylesheet" href="/static/styles/postMeta.css">
+<link rel="stylesheet" href="/static/styles/searchBar.css">
+{% endblock %}
+
+{% block content %}
+{% autoescape false %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-md-12">
+      {{ flash() }}
+      <h2>{{topic}}</h2>
+    </div>
+
+
+    <div class="col-md-9"> <!--For all the posts-->
+      {% if recentPosts == [] %}
+      <p class="profile-title text-center my-5">There are no posts under this topic.</p>
+      {% else %}
+
+      {% for post in recentPosts %}
+        <div class="post-preview my-3">
+          <a href="/adminViewPost/{{ post.PostID }}">
+            <h1 class="post-title">
+              {{ post.Title }}
+            </h1>
+            <h2 class="post-subtitle">
+              {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
+            </h2>
+          </a>
+          <span class="post-meta">Posted by <a href="/adminProfile/{{post.Username}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="#">{{ post.Topic }}</a></span>
+
+          <span class="post-votes ml-auto float-right">
+            <a href="#" data-toggle="modal" data-target="#DeletePostModal"><i class="fa fa-trash" aria-hidden="true"></i></a>
+            <a href="#"><i class="fa fa-arrow-up"></i></a>
+            <span id="postTotalVotes">{{ post.TotalVotes }}</span>
+            <a href="#"><i class="fa fa-arrow-down"></i></a>
+          </span> <!--Votes-->
+        </div> <!--Post-->
+        <div id="DeletePostModal" class="modal fade" role="dialog">
+          <div class="modal-dialog">
+
+            <!-- Modal content-->
+            <div class="modal-content">
+              <div class="modal-header">
+                <h4 class="modal-title">Delete post</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+              </div>
+              <div class="modal-body">
+                <p>Delete {{ post.Username }}'s post? </p>
+              </div>
+              <div class="modal-footer">
+                <form method = "POST" action="/adminDeletePost/{{post.PostID}}">
+                <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      {% endfor %}
+      {%endif%}
+
+
+    </div> <!--Column-->
+
+  </div> <!--Row-->
+</div> <!--Container-->
+{% endautoescape %}
+{% endblock %}

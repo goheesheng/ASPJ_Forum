@@ -1,0 +1,20 @@
+{% extends "adminBase.html" %}
+{% block title %}Admin Files{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="/static/styles/home.css">
+<link rel="stylesheet" href="/static/styles/postMeta.css">
+{% endblock %}
+
+{% block content %}
+<h1>Admin Files</h1>
+
+<div class="container my-4">
+  {% for file in files %}
+  <div class="">
+    <a href="/adminFiles/{{file}}">{{file}}</a>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

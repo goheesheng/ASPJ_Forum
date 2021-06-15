@@ -1,0 +1,23 @@
+.profilebg{
+  background-color: white;
+}
+
+.profile-title{
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.profile-field{
+  display: flex;
+}
+
+.field-title{
+  font-weight: bold;
+}
+.value{
+  text-align: center;
+}
+
+.profile-field .col-md-3{
+  display: flex;
+}

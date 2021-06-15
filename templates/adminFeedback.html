@@ -1,0 +1,38 @@
+{% extends "adminBase.html" %}
+{% block title %}Feedback{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="/static/styles/home.css">
+<link rel="stylesheet" href="/static/styles/postMeta.css">
+<link rel="stylesheet" href="/static/styles/searchBar.css">
+{% endblock %}
+
+{% block content %}
+{% autoescape false %}
+<div class="container my-4">
+<div class="row justify-content-center">
+<div class="col-md-9"> <!--For all the posts-->
+
+  {% for feedback in feedbackList %}
+    <div class="post-preview my-3">
+
+        <h2 class="post-title">
+          {{ feedback['Reason'] }}
+        </h2>
+        <span class="post-subtitle">
+          {{ feedback['Content'] }} <span style="color: #6a6a6a; font-size: 14px;"></span>
+        </span>
+
+      <span class="post-meta">Posted by <a href="/adminProfile/{{ feedback['Username'] }}">{{ feedback['Username'] }}</a> on {{ feedback['DatetimePosted'] }} </span>
+      <span class="post-votes ml-auto float-right">
+        <a href="/replyFeedback/{{ feedback['FeedbackID'] }}"><span id="postTotalVotes">Reply</span></a>
+      </span>
+    </div> <!--Post-->
+  {% endfor %}
+
+
+</div>
+</div>
+</div>
+{% endautoescape %}
+{%endblock%}

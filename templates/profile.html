@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block style %}
+<link rel="stylesheet" type="text/css" href="/static/styles/profile.css">
+<link rel="stylesheet" href="/static/styles/postMeta.css">
+<link rel="stylesheet" href="/static/styles/home.css">
+{% endblock %}
+
+{% block content %}
+{% from "includes/_formhelper.html" import render_field %}
+<div class="col-md-12">
+  {{ flash() }}
+</div>
+<div class="container my-4">
+  <div class="col-md-5 profilebg mx-auto">
+    <p class="profile-title my-3 text-center">{{userData['Username']}}'s Profile</p>
+    <hr class="mx-auto mb-3">
+    <div class="profile-field">
+      <div class="col-md-6">
+        <i class="fa fa-id-card-o mr-3" aria-hidden="true" style="font-size:24px"></i>
+        <span class="field-title">Name:</span>
+      </div>
+      <div class="col-md-6">
+        <p class="value">{{userData['Name']}}</p>
+      </div>
+    </div>
+    <div class="profile-field">
+      <div class="col-md-6">
+        <i class="fa fa-gift mr-3" aria-hidden="true" style="font-size:24px"></i>
+      <span class="field-title">Birthday:</span>
+      </div>
+      <div class="col-md-6">
+        <p class="value">{{userData['Birthday']}}</p>
+      </div>
+    </div>
+    <div class="profile-field">
+      <div class="col-md-6">
+        <i class="fa fa-child mr-3" aria-hidden="true" style="font-size:24px"></i>
+      <span class="field-title">Status:</span>
+      </div>
+      <div class="col-md-6">
+        <p class="value">{{userData['Status']}}</p>
+      </div>
+    </div>
+    <div class="profile-field">
+      <div class="col-md-6">
+        <i class="fa fa-star-o mr-3" aria-hidden="true" style="font-size:24px"></i>
+      <span class="field-title">Credibility:</span>
+      </div>
+      <div class="col-md-6">
+        <p class="value">{{userData['Credibility']}}</p>
+      </div>
+    </div>
+    {% if username == userData['Username'] %}
+    <div class="text-center">
+      <button type="button" class="btn btn-success" data-toggle="modal" data-target="#UpdateModal">Edit Profile</button>
+    </div>
+  </div>
+  {% if recentPosts == [] %}
+  <p class="profile-title text-center my-5">You have not posted anything</p>
+  <div class="text-center">
+    <a href="/addPost/{{sessionID}}" class="btn btn-danger">Add Post</a>
+  </div>
+  {% else %}
+  <p class="profile-title text-center my-3">Your Posts</p>
+    <div class="col-md-10 mx-auto">
+      {% for post in recentPosts %}
+        <div class="post-preview">
+          <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
+            <h1 class="post-title">
+              {{ post.Title }}
+            </h1>
+            <h2 class="post-subtitle">
+              {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
+            </h2>
+          </a>
+          <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="#">{{ post.Topic }}</a></span>
+
+          <span class="post-votes ml-auto float-right">
+            <a href="#"><i class="fa fa-arrow-up"></i></a>
+            <span id="postTotalVotes">{{ post.TotalVotes }}</span>
+            <a href="#"><i class="fa fa-arrow-down"></i></a>
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% else %}
+  </div>
+  {% if recentPosts == [] %}
+  <p class="profile-title text-center my-5">{{userData['Username']}} has not posted anything</p>
+  {% else %}
+  <p class="profile-title text-center my-3">{{userData['Username']}}'s Posts</p>
+    <div class="col-md-10 mx-auto">
+      {% for post in recentPosts %}
+        <div class="post-preview">
+          <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
+            <h1 class="post-title">
+              {{ post.Title }}
+            </h1>
+            <h2 class="post-subtitle">
+              {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
+            </h2>
+          </a>
+          <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="#">{{ post.Topic }}</a></span>
+
+          <span class="post-votes ml-auto float-right">
+            <a href="#"><i class="fa fa-arrow-up"></i></a>
+            <span id="postTotalVotes">{{ post.TotalVotes }}</span>
+            <a href="#"><i class="fa fa-arrow-down"></i></a>
+          </span>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+<div id="UpdateModal" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Update</h4>
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form method="POST" class="mt-4">
+          <div class="form-group">
+            {{render_field(updateProfileForm.email, class= "form-control", value=userData['Email'])}}
+          </div>
+
+          <div class="form-group">
+            {{render_field(updateProfileForm.username, class= "form-control", value=userData['Username'])}}
+          </div>
+
+          <div class="form-group">
+            {{render_field(updateProfileForm.name, class= "form-control", value=userData['Name'])}}
+          </div>
+
+          <div class="form-group">
+            {{render_field(updateProfileForm.dob, class= "form-control", type="date", value=userData['Birthday'])}}
+          </div>
+
+          <div class="form-group">
+            {{render_field(updateProfileForm.status, class= "form-control", value=userData['Status'])}}
+          </div>
+
+          <div class="form-group targets">
+            {{render_field(updateProfileForm.password, class= "form-control")}}
+          </div>
+
+          <div class="form-group targets">
+            {{render_field(updateProfileForm.confirmPassword, class= "form-control")}}
+          </div>
+
+
+
+      </div>
+      <div class="modal-footer">
+        <div class="form-group">
+          <input type="submit" class="btn btn-success">
+        </div>
+      </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

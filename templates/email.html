@@ -1,0 +1,18 @@
+
+{% block content %}
+<div>
+  <p>Dear {{username}}</p>
+  {%if postID=="feedback reply"%}
+  <p>On {{posted}}, you sent us the following feedback:</p>
+  <p>{{content}}</p>
+  <p>{{reply}}<p>
+  {%elif postID=="delete user"%}
+  <p>Your account has been terminated</p>
+  {%else%}
+  <p>On {{posted}}, you made the folowing post:</p>
+  <p>{{content}}</p>
+  <p>Your post has  been removed due to communiy guidelines.</p>
+  {%endif%}
+</div>
+
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{topic}}{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="/static/styles/home.css">
+<link rel="stylesheet" href="/static/styles/postMeta.css">
+<link rel="stylesheet" href="/static/styles/searchBar.css">
+{% endblock %}
+
+{% block content %}
+{% autoescape false %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-md-12">
+      {{ flash() }}
+      <h2>{{topic}}</h2>
+    </div>
+
+
+    <div class="col-md-9"> <!--For all the posts-->
+      {% if recentPosts == [] %}
+      <p class="profile-title text-center my-5">There are no posts under this topic.</p>
+      {% else %}
+
+      {% for post in recentPosts %}
+
+        <div class="post-preview my-3">
+          <a href="/viewPost/{{ post.PostID }}">
+            <h1 class="post-title">
+              {{ post.Title }}
+            </h1>
+            <h2 class="post-subtitle">
+              {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
+            </h2>
+          </a>
+          <span class="post-meta">Posted by <a href="/profile/{{post.Username}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="#">{{ post.Topic }}</a></span>
+
+          <span class="post-votes ml-auto float-right">
+
+            <a href="#"><i class="fa fa-arrow-up"></i></a>
+            <span id="postTotalVotes">{{ post.TotalVotes }}</span>
+            <a href="#"><i class="fa fa-arrow-down"></i></a>
+          </span> <!--Votes-->
+        </div> <!--Post-->
+      {% endfor %}
+      {%endif%}
+
+
+    </div> <!--Column-->
+
+  </div> <!--Row-->
+</div> <!--Container-->
+{% endautoescape %}
+{% endblock %}

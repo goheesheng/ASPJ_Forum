@@ -1,0 +1,190 @@
+{% extends "adminBase.html" %}
+{% block title %}View Post{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="/static/styles/viewPost.css">
+<link rel="stylesheet" href="/static/styles/postMeta.css">
+{% endblock %}
+
+{% block content %}
+{% from "includes/_formhelper.html" import render_field, render_field_no_label %}
+{% autoescape false %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-md-10">
+      {{ flash() }}
+
+      <div class="post-preview">
+        <h1 class="post-title">
+          {{ post.Title }}
+        </h1>
+
+        <p class="post-text">
+          {{ post.Content }}
+        </p>
+
+        <span class="post-meta">Posted by <a href="/adminProfile/{{post.Username}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="/adminIndivTopic/{{ post.TopicID }}">{{ post.Topic }}</a></span>
+
+        <span class="post-votes ml-auto float-right" id="post-votes-{{ post.PostID }}">
+          <a href="#" data-toggle="modal" data-target="#DeletePostModal"><i class="fa fa-trash" aria-hidden="true"></i></a>
+          <a class="cancel-form" data-toggle="collapse" href="#commentForm"><i class="fa fa-comment"></i> Comment</a>
+          <a onclick="postVote(this);" data-vote="1" data-post="{{ post.PostID }}" class="ml-3"><i class="fa fa-arrow-up {% if post.UserVote==1 %}active{% endif %}"></i></a>
+          <span id="postTotalVotes">{{ post.TotalVotes }}</span>
+          <a onclick="postVote(this);" data-vote="-1" data-post="{{ post.PostID }}"><i class="fa fa-arrow-down {% if post.UserVote==-1 %}active{% endif %}"></i></a>
+        </span> <!--Votes-->
+
+        <form method="POST" class="mt-4 collapse" id="commentForm">
+          <hr class="mx-auto w-100 mb-4">
+          <div class="form-group">
+            {{render_field_no_label(commentForm.comment, class= "form-control")}}
+          </div>
+          <div class="form-group">
+            <button type="button" class="btn btn-secondary cancel-form" data-toggle="collapse" href="#commentForm">Cancel</button>
+            <input type="submit" form="commentForm" class="btn btn-success">
+          </div>
+        </form>
+
+        <div id="DeletePostModal" class="modal fade" role="dialog">
+          <div class="modal-dialog">
+
+            <!-- Modal content-->
+            <div class="modal-content">
+              <div class="modal-header">
+                <h4 class="modal-title">Delete post</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+              </div>
+              <div class="modal-body">
+                <p>Delete {{ post.Username }}'s post? </p>
+              </div>
+              <div class="modal-footer">
+                <form method = "POST" action="/adminDeletePost/{{post.PostID}}">
+                <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div> <!--Post-->
+
+      <span class="meta">Comments:</span>
+
+      {% for comment in commentList %}
+      <div class="comment">
+        <p class="comment-meta">
+          <a href="/adminProfile/{{comment.Username}}">{{ comment.Username }}</a> on {{ comment.DatetimePosted }}
+        </p>
+
+        <p>{{ comment.Content }}</p>
+
+        <div class="comment-functions text-right" id="comment-votes-{{ comment.CommentID }}">
+          <a href="#" data-toggle="modal" data-target="#replyModal" data-id="{{ comment.CommentID }}"><i class="fa fa-reply"></i> Reply</a>
+          <a onclick="commentVote(this);" data-vote="1" data-comment="{{ comment.CommentID }}" class="ml-3"><i class="fa fa-arrow-up {% if comment.UserVote==1 %}active{% endif %}"></i></a>
+          <span id="commentTotalVotes">{{ comment.TotalVotes }}</span>
+          <a onclick="commentVote(this);" data-vote="-1" data-comment="{{ comment.CommentID }}"><i class="fa fa-arrow-down {% if comment.UserVote==-1 %}active{% endif %}"></i></a>
+        </div> <!--Votes-->
+
+        {% if comment.ReplyList!=None %}
+          {% for reply in comment.ReplyList %}
+            <div class="sub-comment">
+              <p class="comment-meta">
+                <a href="/adminProfile/{{reply.Username}}">{{ reply.Username }}</a> on {{ reply.DatetimePosted }}
+              </p>
+              <p>{{ reply.Content }}</p>
+            </div> <!--Sub Comment-->
+          {% endfor %}
+        {% endif %}
+
+      </div> <!--Comment-->
+      {% endfor %}
+
+    </div> <!--Column-->
+  </div> <!--Row-->
+</div> <!--Container-->
+
+<div class="modal fade" id="replyModal" tabindex="-1" role="dialog" aria-labelledby="replyModal" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Reply Comment</h5>
+          <button type="button" class="close cancel-form" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form method="POST" id="replyForm">
+            {{ render_field_no_label(replyForm.reply, class= "form-control") }}
+            {{ render_field_no_label(replyForm.repliedID, class= "form-control") }}
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary cancel-form" data-dismiss="modal">Close</button>
+          <input type="submit" form="replyForm" class="btn btn-success">
+        </div>
+    </div> <!--Modal content-->
+  </div> <!--Modal dislog-->
+</div> <!--Main Modal div-->
+
+
+{% endautoescape %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/scripts/post-votes.js"></script>
+<script>
+function commentVote(button) {
+  var voteValue = button.getAttribute("data-vote");
+  var commentID = button.getAttribute("data-comment");
+
+  fetch('/commentVote', {
+    headers: new Headers({
+      "content-type": "application/json"
+    }),
+    method: 'POST',
+    body: JSON.stringify({
+        "voteValue": voteValue,
+        "commentID": commentID
+    })
+  })
+
+  .then(function (response) { // At this point, Flask has printed our JSON
+    response.json().then(function(data) {
+      if (response.status === 401) {
+        location.reload();
+      }
+
+      else {
+        if (data['toggleUpvote']==true) {
+          document.querySelector('#comment-votes-' + data['commentID'] + ' [data-vote="1"] i.fa-arrow-up').classList.toggle('active');
+        }
+
+        if (data['toggleDownvote']) {
+          document.querySelector('#comment-votes-' + data['commentID'] + ' [data-vote="-1"] i.fa-arrow-down').classList.toggle('active');
+        }
+
+        document.querySelector('#comment-votes-' + data['commentID'] + ' #commentTotalVotes').innerText = data['updatedCommentTotal'];
+      }
+    });
+  }).catch(function (error) {
+      console.log("Fetch error: " + error['message']);
+  });
+}
+
+$('#replyModal').on('show.bs.modal', function (event) {
+  var button = $(event.relatedTarget)
+  var commentID = button.data('id')
+  var modal = $(this)
+  modal.find('#repliedID').val(commentID)
+})
+
+document.querySelectorAll('.cancel-form').forEach(item => {
+  item.addEventListener('click', event => {
+    $('#comment').val('')
+    $('#repliedID').val('')
+    $('#reply').val('')
+  })
+})
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "adminBase.html" %}
+{% block title %}Home{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="/static/styles/home.css">
+<link rel="stylesheet" href="/static/styles/postMeta.css">
+<link rel="stylesheet" href="/static/styles/searchBar.css">
+{% endblock %}
+
+{% block content %}
+{% from "includes/_formhelper.html" import render_field_no_label %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-md-12">
+      {{ flash() }}
+    </div>
+
+    <div class="col-md-3">
+      <div class="sticky-top">
+        <div id="trending-topics" class="mt-0">
+          <p class="font-weight-bold my-3">
+            Trending Topics
+          </p>
+
+          <hr class="mx-auto">
+
+          <p class="topic align-middle m-0">
+            <span>#1</span>
+            Python
+          </p>
+
+          <p class="topic align-middle m-0">
+            <span>#2</span>
+            Java
+          </p>
+
+          <p class="topic align-middle m-0">
+            <span>#3</span>
+            Stack
+          </p>
+        </div> <!--Trending Topics-->
+      </div> <!--Stick--->
+    </div> <!--Column-->
+
+
+    <div class="col-md-9"> <!--For all the posts-->
+      <form method="POST" class="form-group row">
+        <div class="col-md-8">
+          <div class="input-group">
+            {{ render_field_no_label(searchBarForm.searchQuery, class="form-control rounded-pill py-2 pr-5 mr-1") }}
+            <span class="input-group-append">
+                <button class="btn rounded-pill input-group-text border-0 bg-transparent ml-n5"><i class="fa fa-search"></i></button>
+            </span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          {{ render_field_no_label(searchBarForm.topic, class= "form-control") }}
+        </div>
+      </form>
+      {% for post in recentPosts %}
+        <div class="post-preview my-3">
+          <a href="/adminViewPost/{{ post.PostID }}">
+            <h1 class="post-title">
+              {{ post.Title }}
+            </h1>
+            <h2 class="post-subtitle">
+              {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
+            </h2>
+          </a>
+          <span class="post-meta">Posted by <a href="adminProfile/{{post.Username}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="/adminIndivTopic/{{post.TopicID}}">{{ post.Topic }}</a></span>
+
+          <span class="post-votes ml-auto float-right" id="post-votes-{{ post.PostID }}">
+            <a href="#" data-toggle="modal" data-target="#DeletePostModal{{post.PostID}}"><i class="fa fa-trash" aria-hidden="true"></i></a>
+            <a onclick="postVote(this);" data-vote="1" data-post="{{ post.PostID }}"><i class="fa fa-arrow-up {% if post.UserVote==1 %}active{% endif %}"></i></a>
+            <span id="postTotalVotes">{{ post.TotalVotes }}</span>
+            <a onclick="postVote(this);" data-vote="-1" data-post="{{ post.PostID }}"><i class="fa fa-arrow-down {% if post.UserVote==-1 %}active{% endif %}"></i></a>
+          </span> <!--Votes-->
+        </div> <!--Post-->
+        <div id="DeletePostModal{{post.PostID}}" class="modal fade" role="dialog">
+          <div class="modal-dialog">
+
+            <!-- Modal content-->
+            <div class="modal-content">
+              <div class="modal-header">
+                <h4 class="modal-title">Delete post</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+              </div>
+              <div class="modal-body">
+                <p>Delete {{ post.Username }}'s post? </p>
+              </div>
+              <div class="modal-footer">
+                <a href="/adminDeletePost/{{post.PostID}}">Delete</a>
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      {% endfor %}
+
+        <div>
+          <a href="/adminTopics" class="btn btn-danger w-100">View more posts</a>
+        </div>
+    </div> <!--Column-->
+
+  </div> <!--Row-->
+</div> <!--Container-->
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/scripts/post-votes.js"></script>
+{% endblock %}

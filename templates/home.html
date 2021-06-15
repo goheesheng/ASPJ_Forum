@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block style %}
+<link rel="stylesheet" href="/static/styles/home.css">
+<link rel="stylesheet" href="/static/styles/postMeta.css">
+<link rel="stylesheet" href="/static/styles/searchBar.css">
+{% endblock %}
+
+{% block content %}
+{% from "includes/_formhelper.html" import render_field_no_label %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-md-12">
+      {{ flash() }}
+    </div>
+
+    <div class="col-md-3">
+      <div class="sticky-top">
+        <div>
+          {%if login%}
+          <a href="/addPost" class="btn btn-danger w-100">Add Post</a>
+          {%else%}
+          <a href="/login" class="btn btn-danger w-100">Add Post</a>
+          {%endif%}
+        </div>
+
+        <div class="my-3" id="trending-topics">
+          <p class="font-weight-bold my-3">
+            Trending Topics
+          </p>
+
+          <hr class="mx-auto">
+
+          <p class="topic align-middle m-0">
+            <span>#1</span>
+            Python
+          </p>
+
+          <p class="topic align-middle m-0">
+            <span>#2</span>
+            Java
+          </p>
+
+          <p class="topic align-middle m-0">
+            <span>#3</span>
+            Stack
+          </p>
+        </div> <!--Trending Topics-->
+      </div> <!--Stick--->
+    </div> <!--Column-->
+
+
+    <div class="col-md-9"> <!--For all the posts-->
+
+      <form method="POST" class="form-group row">
+        <div class="col-md-8">
+          <div class="input-group">
+            {{ render_field_no_label(searchBarForm.searchQuery, class="form-control rounded-pill py-2 pr-5 mr-1") }}
+            <span class="input-group-append">
+                <button class="btn rounded-pill input-group-text border-0 bg-transparent ml-n5"><i class="fa fa-search"></i></button>
+            </span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          {{ render_field_no_label(searchBarForm.topic, class= "form-control") }}
+        </div>
+      </form>
+
+      {% for post in recentPosts %}
+        <div class="post-preview my-3">
+          {%if login%}
+          <a href="/viewPost/{{ post.PostID }}">
+          {%else%}
+          <a href="/login">
+          {%endif%}
+            <h1 class="post-title">
+              {{ post.Title }}
+            </h1>
+            <h2 class="post-subtitle">
+              {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
+            </h2>
+          </a>
+          <span class="post-meta">Posted by
+            {%if login%}
+            <a href="/profile/{{post.Username}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} |
+            {%else%}
+            <a href="/login">{{ post.Username }}</a> on {{ post.DatetimePosted }} |
+            {%endif%}
+
+            {%if login%}
+            <a href="/indivTopic/{{post.TopicID}}">{{ post.Topic }}</a>
+            {%else%}
+            <a href="/login">{{ post.Topic }}</a>
+            {%endif%}
+          </span>
+
+          <span class="post-votes ml-auto float-right" id="post-votes-{{ post.PostID }}">
+            <a onclick="postVote(this);" data-vote="1" data-post="{{ post.PostID }}"><i class="fa fa-arrow-up {% if post.UserVote==1 %}active{% endif %}"></i></a>
+            <span id="postTotalVotes">{{ post.TotalVotes }}</span>
+            <a onclick="postVote(this);" data-vote="-1" data-post="{{ post.PostID }}"><i class="fa fa-arrow-down {% if post.UserVote==-1 %}active{% endif %}"></i></a>
+          </span> <!--Votes-->
+        </div> <!--Post-->
+      {% endfor %}
+
+      <div>
+        <a href="/topics" class="btn btn-danger w-100">View more posts</a>
+      </div>
+    </div> <!--Column-->
+
+  </div> <!--Row-->
+</div> <!--Container-->
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/scripts/post-votes.js"></script>
+{% endblock %}
