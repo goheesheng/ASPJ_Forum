@@ -12,6 +12,7 @@ import DatabaseManager
 
 
 #im tall
+#nah
 db = mysql.connector.connect(
     host="localhost",
     user="ASPJuser",
