@@ -10,7 +10,7 @@ import asyncio
 from threading import Thread
 import DatabaseManager
 
-
+#ernestmadethiscomment
 #eileengae
 db = mysql.connector.connect(
     host="localhost",
