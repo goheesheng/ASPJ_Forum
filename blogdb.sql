@@ -1,8 +1,8 @@
-CREATE DATABASE  IF NOT EXISTS `blogdb` /*!40100 DEFAULT CHARACTER SET latin1 */;
-USE `blogdb`;
+CREATE DATABASE  IF NOT EXISTS `mydatabase` /*!40100 DEFAULT CHARACTER SET latin1 */;
+USE `mydatabase`;
 -- MySQL dump 10.13  Distrib 8.0.20, for Win64 (x86_64)
 --
--- Host: 127.0.0.1    Database: blogdb
+-- Host: 127.0.0.1    Database: mydatabase
 -- ------------------------------------------------------
 -- Server version	5.7.30-log
 
