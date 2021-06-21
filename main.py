@@ -65,7 +65,6 @@ global sessionID
 sessionID = 0
 sessions={}
 sessionInfo = {'login': False, 'currentUserID': 0, 'username': '', 'isAdmin': 0}
-
 sessionID += 1
 sessionInfo['sessionID'] = sessionID #set the session id
 sessions[sessionID] = sessionInfo #store the session id
@@ -380,7 +379,7 @@ def login():
     loginForm = Forms.LoginForm(request.form)
     global sessionID
     if request.method == 'POST' and loginForm.validate():
-        sql = "SELECT UserID, Username, Password, Active, LoginAttempts, Email FROM user WHERE Username = %s"
+        sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
         val = (loginForm.username.data,)
         dictCursor.execute(sql, val)
         findUser = dictCursor.fetchone()
@@ -435,7 +434,7 @@ def otp(link):
     otp = tupleCursor.fetchone()
     print(val)
     print(otp,'otoptuple')
-    if otp is None:
+    if otp is None: #Null
         abort(404)
     if request.method == "POST" and otpform.validate():
         if otp[1] > 180:
@@ -449,39 +448,38 @@ def otp(link):
         temp_details = temp_signup[link]
         print(otp[1],otp[0],otp,'otp')
         if str(otp[0]) == otpform.otp.data:
-            # try:
-            sql = "INSERT INTO user (Email, Username, Birthday, Password) VALUES (%s, %s, %s, %s)"
-            val = (temp_details["Email"], temp_details["Username"], temp_details["Birthday"], temp_details["Password"]) # insert the data only after OTP is successful
-            tupleCursor.execute(sql, val)
-            db.commit()
-        #
-        # except mysql.connector.errors.IntegrityError as errorMsg: #Prevent Error-based sql injection
-        #     errorMsg = str(errorMsg)
-        #     print('error here')
-        #     if 'email' in errorMsg.lower():
-        #         otpform.otp.errors.append('The email has already been linked to another account. Please use a different email.')
-        #     elif 'username' in errorMsg.lower():
-        #         otpform.otp.errors.append('This username is already taken.')
+            try:
+                sql = "INSERT INTO user (Email, Username, Birthday, Password) VALUES (%s, %s, %s, %s)"
+                val = (temp_details["Email"], temp_details["Username"], temp_details["Birthday"], temp_details["Password"]) # insert the data only after OTP is successful
+                tupleCursor.execute(sql, val)
+                db.commit()
 
-        # else:
+            except mysql.connector.errors.IntegrityError as errorMsg: #Prevent Error-based sql injection
+                errorMsg = str(errorMsg)
+                print('error here')
+                if 'email' in errorMsg.lower():
+                    otpform.otp.errors.append('The email has already been linked to another account. Please use a different email.')
+                elif 'username' in errorMsg.lower():
+                    otpform.otp.errors.append('This username is already taken.')
 
-            temp_signup.pop(link)
-            sql = "DELETE from otp WHERE link =%s" #ensure otp with same link wont be exploited
-            val = (link,)
-            tupleCursor.execute(sql,val)
-            db.commit()
-            sql = "SELECT UserID, Username FROM user WHERE Username=%s AND Password=%s"
-            val = (temp_details["Username"], temp_details["Password"])
-            tupleCursor.execute(sql, val)
-            findUser = tupleCursor.fetchone()
-            sessionInfo['login'] = True
-            sessionInfo['currentUserID'] = int(findUser[0])
-            sessionInfo['username'] = findUser[1]
-            sessionID += 1
-            sessionInfo['sessionID'] = sessionID
-            sessions[sessionID] = sessionInfo
-            flash('Account successfully created! You are now logged in as %s.' %(sessionInfo['username']), 'success')
-            return redirect('/home')
+            else:
+                temp_signup.pop(link)
+                sql = "DELETE from otp WHERE link =%s" #ensure otp with same link wont be exploited
+                val = (link,)
+                tupleCursor.execute(sql,val)
+                db.commit()
+                sql = "SELECT UserID, Username FROM user WHERE Username=%s AND Password=%s"
+                val = (temp_details["Username"], temp_details["Password"])
+                tupleCursor.execute(sql, val)
+                findUser = tupleCursor.fetchone()
+                sessionInfo['login'] = True
+                sessionInfo['currentUserID'] = int(findUser[0])
+                sessionInfo['username'] = findUser[1]
+                sessionID += 1
+                sessionInfo['sessionID'] = sessionID
+                sessions[sessionID] = sessionInfo
+                flash('Account successfully created! You are now logged in as %s.' %(sessionInfo['username']), 'success')
+                return redirect('/home')
 
         elif temp_details["Resend count"] < 3: #if wrong password, resend otp again of which i do not want, not fixed pls fix
             print('resend')
