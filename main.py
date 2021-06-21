@@ -10,6 +10,7 @@ import sys
 import asyncio
 from threading import Thread
 import DatabaseManager
+#testcommit
 
 #Do set this
 # os.environ['DB_USERNAME'] = 'ASPJuser'
@@ -46,8 +47,8 @@ app.config.update(
     MAIL_PORT= 587,
     MAIL_USE_TLS= True,
     MAIL_USE_SSL= False,
-	MAIL_USERNAME = os.environ['MAIL_USERNAME'],#do not want to leak the mail username
-	MAIL_PASSWORD = os.environ["MAIL_PASSWORD"],#do not want to leak the mail password
+	MAIL_USERNAME = os.environ['DB_USERNAME'],#do not want to leak the mail username
+	MAIL_PASSWORD = os.environ["DB_PASSWORD"],#do not want to leak the mail password
 	MAIL_DEBUG = True,
 	MAIL_SUPPRESS_SEND = False,
     MAIL_ASCII_ATTACHMENTS = True,
