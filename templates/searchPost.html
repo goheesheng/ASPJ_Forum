@@ -36,7 +36,7 @@
       {% else %}
         {% for post in postList %}
           <div class="post-preview my-3">
-            <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
+            <a href="/viewPost/{{ post.PostID}}">
               <h1 class="post-title">
                 {{ post.Title }}
               </h1>
@@ -44,7 +44,7 @@
                 {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
               </h2>
             </a>
-            <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="/indivTopic/{{ post.Topic }}/{{sessionID}}">{{ post.Topic }}</a></span>
+            <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="/indivTopic/{{ post.Topic }}">{{ post.Topic }}</a></span>
 
             <span class="post-votes ml-auto float-right" id="post-votes-{{ post.PostID }}">
               <a onclick="postVote(this);" data-vote="1" data-post="{{ post.PostID }}"><i class="fa fa-arrow-up {% if post.UserVote==1 %}active{% endif %}"></i></a>
