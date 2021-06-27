@@ -22,7 +22,7 @@
         <p class="post-text">
           {{ post.Content }}
         </p>
-        {% end autoescape %}
+        {% endautoescape %}
 
         <span class="post-meta">Posted by <a href="/profile/{{post.Username}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="/indivTopic/{{ post.Topic }}">{{ post.Topic }}</a></span>
 
@@ -55,7 +55,7 @@
 
         {% autoescape True %}
         <p>{{ comment.Content }}</p>
-        {% end autoescape %}
+        {% endautoescape %}
 
         <div class="comment-functions text-right" id="comment-votes-{{ comment.CommentID }}">
           <a href="#" data-toggle="modal" data-target="#replyModal" data-id="{{ comment.CommentID }}"><i class="fa fa-reply"></i> Reply</a>
@@ -72,7 +72,7 @@
               </p>
               {% autoescape True %}
               <p>{{ reply.Content }}</p>
-              {% end autoescape %}
+              {% endautoescape %}
             </div> <!--Sub Comment-->
           {% endfor %}
         {% endif %}
