@@ -18,9 +18,9 @@
         <div class="post-preview my-3">
 
             <h2 class="post-title">
-              {% autoescape false%}
+              {% autoescape True %}
               {{ feedback['Reason'] }}
-              {% endautoescape %}
+              {% end autoescape %}
             </h2>
             <span class="post-subtitle">
               {{ feedback['Content'] }} <span style="color: #6a6a6a; font-size: 14px;"></span>
