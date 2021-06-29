@@ -18,7 +18,7 @@
           {{ post.Title }}
         </h1>
 
-        {% autoescape false %}
+        {% autoescape True %}
         <p class="post-text">
           {{ post.Content }}
         </p>
@@ -53,7 +53,7 @@
           <a href="/profile/{{comment.Username}}">{{ comment.Username }}</a> on {{ comment.DatetimePosted }}
         </p>
 
-        {% autoescape false %}
+        {% autoescape True %}
         <p>{{ comment.Content }}</p>
         {% endautoescape %}
 
@@ -70,7 +70,7 @@
               <p class="comment-meta">
                 <a href="/profile/{{reply.Username}}">{{ reply.Username }}</a> on {{ reply.DatetimePosted }}
               </p>
-              {% autoescape false %}
+              {% autoescape True %}
               <p>{{ reply.Content }}</p>
               {% endautoescape %}
             </div> <!--Sub Comment-->

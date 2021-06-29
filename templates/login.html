@@ -10,7 +10,7 @@
     <div class="col-md-6">
       <h1>Login</h1>
 
-      {% autoescape false %}
+      {% autoescape True %}
       <form method="POST" class="mt-4">
         <div class="form-group">
           {{render_field(loginForm.username, class= "form-control")}}
