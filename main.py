@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, send_from_directory, session
+from flask_wtf.csrf import CSRFProtect
 import mysql.connector, re, random
 import Forms
 from datetime import datetime
@@ -17,6 +18,7 @@ from datetime import timedelta
 # os.environ['DB_USERNAME'] = 'ASPJuser'
 # os.environ['DB_PASSWORD'] = 'P@55w0rD'
 #
+#
 # print(os.environ['DB_USERNAME'])
 # print(os.environ.['DB_PASSWORD'])
 # os.environ['DB_USERNAME'] = 'ASPJuser'
@@ -32,9 +34,12 @@ db = mysql.connector.connect(
 tupleCursor = db.cursor(buffered=True)
 dictCursor = db.cursor(buffered=True, dictionary=True)
 tupleCursor.execute("SHOW TABLES")
-print(tupleCursor)
+print(tupleCursor) #check sql tables
 
 app = Flask(__name__)
+
+ #CSRF protection globally for a Flask app
+# csrf.init_app(app)
 
 #Do set this, go discord and follow instructions
 # os.environ['MAIL_USERNAME'] = 'appdevescip2003@gmail.com'
@@ -54,11 +59,14 @@ app.config.update(
 	MAIL_SUPPRESS_SEND = False,
     MAIL_ASCII_ATTACHMENTS = True,
     # Directory for admins to refer files (Files) #inside has session logs
-    UPLOAD_FOLDER = "templates\Files"
+    UPLOAD_FOLDER = "templates\Files",
+    WTF_CSRF_SECRET_KEY = 'testing'
 	)
+csrf = CSRFProtect(app)
 cursor = db.cursor()
 
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+
 mail = Mail(app)
 """ For testing purposes only. To make it convenient cause I can't remember all the account names.
 Uncomment the account that you would like to use. To run the program as not logged in, run the first one."""
@@ -444,8 +452,8 @@ def otp(link):
     otp = tupleCursor.fetchone()
     print(val)
     print(otp,'otoptuple')
-    if otp is None: #Null
-        abort(404)
+    # if otp is None: #Null
+    #     abort(404)
     if request.method == "POST" and otpform.validate():
         if otp[1] > 180:
             flash('Your OTP has expired. Please resubmit the signup form','danger')

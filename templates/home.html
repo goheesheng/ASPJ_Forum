@@ -54,6 +54,9 @@
     <div class="col-md-9"> <!--For all the posts-->
 
       <form method="POST" class="form-group row">
+        <div class="form-group">
+            {{ searchBarForm.csrf_token }}
+        </div>
         <div class="col-md-8">
           <div class="input-group">
             {{ render_field_no_label(searchBarForm.searchQuery, class="form-control rounded-pill py-2 pr-5 mr-1") }}

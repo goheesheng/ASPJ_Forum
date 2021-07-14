@@ -1,8 +1,10 @@
-from wtforms import Form, validators, StringField, TextAreaField, PasswordField, SelectField, HiddenField
+from wtforms import validators, StringField, TextAreaField, PasswordField, SelectField, HiddenField
+from flask_wtf import Form
 from wtforms.fields import DateField
 from wtforms_components import DateRange
 from datetime import date
 import re
+
 
 class SearchBarForm(Form):
     searchQuery = StringField('Search Query', render_kw={"placeholder": "Search for a post..."})
