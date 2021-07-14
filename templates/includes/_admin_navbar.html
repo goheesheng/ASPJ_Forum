@@ -25,12 +25,21 @@
 
 
     <ul class="navbar-nav ml-auto">
-      <li class="nav-item">
-        <a class="nav-link" href="/adminProfile/{{username}}"><i class="fa fa-user" aria-hidden="true"></i> {{ username }}</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/logout"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a>
-      </li>
+      {% if login==True %}
+        <li class="nav-item">
+          <a class="nav-link" href="/adminProfile/{{username}}"><i class="fa fa-user" aria-hidden="true"></i> {{ username }}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/logout"><i class="fa fa-sign-out" aria-hidden="true"></i> Logout</a>
+        </li>
+      {% else %}
+        <li class="nav-item {% if currentPage=='login' %}active{% endif %}">
+          <a class="nav-link" href="/login">Login</a>
+        </li>
+        <li class="nav-item {% if currentPage=='signUp' %}active{% endif %}">
+          <a class="nav-link" href="/signup">Sign Up</a>
+        </li>
+      {% endif %}
     </ul>
   </div>
 </nav>
