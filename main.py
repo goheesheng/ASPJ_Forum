@@ -745,10 +745,10 @@ def resetPassword(url):
 
 @app.route('/topics')
 def topics():
-
     sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
     listOfTopics = tupleCursor.fetchall()
+
     return render_template('topics.html', currentPage='topics', **session, listOfTopics=listOfTopics)
 
 @app.route('/indivTopic/<topicID>', methods=["GET", "POST"])

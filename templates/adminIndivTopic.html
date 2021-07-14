@@ -55,6 +55,9 @@
               </div>
               <div class="modal-footer">
                 <form method = "POST" action="/adminDeletePost/{{post.PostID}}">
+                 <div class="form-group">
+                    {{ searchBarForm.csrf_token }}
+                </div>
                 <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
                 <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
