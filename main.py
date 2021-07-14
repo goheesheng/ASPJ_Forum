@@ -1,7 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, send_from_directory, session,get_flashed_messages
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, send_from_directory, session
 import mysql.connector, re, random
 import Forms
-from datetime import datetime, timedelta # for session timeout
+from datetime import datetime
 # Flask mail
 import os
 import secrets #for the otp token
@@ -10,7 +10,8 @@ import sys
 import asyncio
 from threading import Thread
 import DatabaseManager
-from flask_login import LoginManager, login_required, login_user, logout_user, current_user, UserMixin
+from flask_session import Session
+from datetime import timedelta
 
 #Do set this
 # os.environ['DB_USERNAME'] = 'ASPJuser'
@@ -34,19 +35,6 @@ tupleCursor.execute("SHOW TABLES")
 print(tupleCursor)
 
 app = Flask(__name__)
-
-# # define flask-login configuration
-# login_mgr = LoginManager()
-# login_mgr.init_app(app)     # app is a flask object
-# login_mgr.login_view = 'login'
-# login_mgr.refresh_view = 'relogin'
-# # login_mgr.needs_refresh_message = (u"Session timeout, please re-login")
-# # login_mgr.needs_refresh_message_category = "info"
-
-app.config.from_object(__name__)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = '.login'
 
 #Do set this, go discord and follow instructions
 # os.environ['MAIL_USERNAME'] = 'appdevescip2003@gmail.com'
@@ -72,27 +60,8 @@ cursor = db.cursor()
 
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 mail = Mail(app)
-
-# app.permanent_session_lifetime = timedelta(seconds=5)
-# # if 'Session timeout, please re-login.' not in get_flashed_messages() and (request.referrer != request.base_url+"/login?next=%2Flogout" or '/static/' not in request.path):
-# #     print("entered")
-# # flash('Session timeout, please re-login.','warning')
-
-
-@login_manager.user_loader
-def load_user(UserID):
-    # sql = "SELECT UserID from user"
-    # val = (UserID,)
-    # dictCursor.excute(sql, val)
-    # userData = dictCursor.fetchone()
-
-    return User(UserID) # fetch from the database
-
-
-class User(UserMixin):
-    def __init__(self, id):
-        self.id = id
-
+""" For testing purposes only. To make it convenient cause I can't remember all the account names.
+Uncomment the account that you would like to use. To run the program as not logged in, run the first one."""
 
 def get_all_topics(option):
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
@@ -105,7 +74,6 @@ def get_all_topics(option):
     if option=='all':
         topicTuples.insert(0, ('0', 'All Topics'))
     return topicTuples
-
 
 @app.route('/postVote', methods=["GET", "POST"])
 def postVote():
@@ -236,30 +204,16 @@ def commentVote():
 @app.route('/')
 def main():
     # to check if the user exist or not
-    # if not session.get("userID"):
+    if not session.get("name"):
         # if not there in the session then redirect to login page
-        # return redirect("/home")
-    # return render_template('home.html')
-    return redirect("/home")
-
-
-# # for flask session timeout
-# @app.route('/hello')
-# def hello():
-#     if current_user.is_authenticated:
-#         return 'Hello %s!' %current_user.name
-#     else:
-#         return 'You are not logged in!'
-#
-#
-# @app.route('/settings')
-# @login_required
-# def settings():
-#     pass
+        return redirect("/login")
+    return render_template('home.html')
+    # return redirect("/home")
 
 
 @app.route('/home', methods=["GET", "POST"])
 def home():
+    print(session)
     searchBarForm = Forms.SearchBarForm(request.form)
     searchBarForm.topic.choices = get_all_topics('all')
     if request.method == 'POST' and searchBarForm.validate():
@@ -274,7 +228,7 @@ def home():
     recentPosts = dictCursor.fetchall()
 
     for post in recentPosts:
-        if session.get('login'):
+        if session['login']:
             currentVote = DatabaseManager.get_user_post_vote(str(session['userID']), str(post['PostID']))
             if currentVote==None:
                 post['UserVote'] = 0
@@ -285,7 +239,6 @@ def home():
         post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
         post['Content'] = post['Content'][:200]
     return render_template('home.html', currentPage='home', **session, searchBarForm = searchBarForm, recentPosts = recentPosts)
-
 
 @app.route('/searchPosts', methods=["GET", "POST"])
 def searchPosts():
@@ -429,9 +382,11 @@ def feedback():
         return redirect("/home")
     return render_template('feedback.html', currentPage='feedback', **session, feedbackForm = feedbackForm)
 
-
 @app.route('/login', methods=["GET", "POST"])
 def login():
+    # # setting session timeout
+    # session.permanent = True
+    # app.permanent_session_lifetime = timedelta(minutes=1)
     # if form is submitted
     loginForm = Forms.LoginForm(request.form)
     if request.method == "POST" and loginForm.validate():
@@ -445,11 +400,6 @@ def login():
 
             loginForm.password.errors.append('Wrong username or password.')
         else:
-            # flask session timeout
-            user = User(findUser['UserID'])
-            login_user(user)
-
-
             session['login']=True
             session['userID']=int(findUser['UserID'])
             session['username']=findUser['Username']
@@ -475,18 +425,12 @@ def login():
 
 
 @app.route('/logout')
-@login_required # flask session timeout
 def logout():
-    logout_user()
-    # timed_out = request.args.get('timeout')
-    # if request.args.get('timeout'):
-    #     flash('Session timeout, please re-login.', 'warning')
     session["name"] = None
     session['login'] = False
     session['userID'] = 0
     session['username'] = ''
     return redirect("/home")
-    # return render_template('home.html', timed_out=timed_out)
 
 
 #sign up final stage
@@ -612,7 +556,6 @@ def signUp():
                 return redirect('/login/' + str(link))
 
     return render_template('signup.html', currentPage='signUp', **session, signUpForm = signUpForm)
-
 
 @app.route('/profile/<username>', methods=["GET", "POST"])
 def profile(username):
@@ -826,7 +769,6 @@ def indivTopic(topicID):
     topic=tupleCursor.fetchone()
     return render_template('indivTopic.html', currentPage='indivTopic', **session, recentPosts=recentPosts, topic = topic[0])
 
-
 @app.route('/adminProfile/<username>', methods=["GET", "POST"])
 def adminUserProfile(username):
 
@@ -923,7 +865,7 @@ def adminUserProfile(username):
             return redirect('/adminProfile/' + session['username'])
 
 
-    return render_template("adminProfile.html", currentPage = "myProfile", **session, userData = userData, recentPosts = recentPosts,
+    return render_template("adminProfile.html", currentPage = "myProfile", **session, userData = userData, recentPosts = recentPosts, admin=admin,
     updateEmailForm=updateEmailForm, updateUsernameForm=updateUsernameForm, updateStatusForm=updateStatusForm)
 
 @app.route('/adminHome', methods=["GET", "POST"])
@@ -941,20 +883,16 @@ def adminHome():
     dictCursor.execute(sql)
     recentPosts = dictCursor.fetchall()
     for post in recentPosts:
-        if session.get('login'):
-            currentVote = DatabaseManager.get_user_post_vote(str(session.get('userID')), str(post['PostID']))
-            if currentVote==None:
-                post['UserVote'] = 0
-            else:
-                post['UserVote'] = currentVote['Vote']
-        else:
+        currentVote = DatabaseManager.get_user_post_vote(str(session['userID']), str(post['PostID']))
+        if currentVote==None:
             post['UserVote'] = 0
+        else:
+            post['UserVote'] = currentVote['Vote']
 
         post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
         post['Content'] = post['Content'][:200]
 
-    return render_template('adminHome.html', currentPage='adminHome', **session, searchBarForm = searchBarForm, recentPosts = recentPosts)
-
+    return render_template('adminHome.html', currentPage='adminHome' ,username=session["username"], searchBarForm = searchBarForm,recentPosts = recentPosts)
 
 @app.route('/adminViewPost/<int:postID>/', methods=["GET", "POST"])
 def adminViewPost(postID):
@@ -967,7 +905,7 @@ def adminViewPost(postID):
     post = dictCursor.fetchone()
     post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
 
-    currentVote = DatabaseManager.get_user_post_vote(str(session.get('UserID')), str(postID))
+    currentVote = DatabaseManager.get_user_post_vote(str(session['userID']), str(postID))
     if currentVote==None:
         post['UserVote'] = 0
     else:
@@ -1066,6 +1004,8 @@ def addTopic():
         flash('Topic successfully created!', 'success')
         return redirect('/adminHome')
 
+
+
     return render_template('addTopic.html', currentPage='addTopic', **session, topicForm=topicForm)
 
 @app.route('/adminUsers')
@@ -1160,19 +1100,6 @@ def replyFeedback(feedbackID):
         db.commit()
         return redirect('/adminFeedback')
     return render_template('replyFeedback.html', currentPage='replyFeedback', **session,replyForm=replyForm, feedbackList=feedbackList)
-
-
-# flask session timeout
-@app.before_request
-def make_session_permanent():
-    session_modified = True
-    session_permanent = True
-    app.permanent_session_lifetime = timedelta(seconds=5)
-    # print(request.referrer)
-    # # if session_permanent:
-    # if 'Session timeout, please re-login.' not in get_flashed_messages() and (request.referrer != request.base_url+"/login?next=%2Flogout" or '/static/' not in request.path):
-    #     print("entered")
-    # flash('Session timeout, please re-login.','warning')
 
 
 if __name__ == "__main__":
