@@ -12,25 +12,80 @@
       {% autoescape True %}
       <form method="POST" class="mt-4">
 
-        <div class="form-group">
+        <div id="username" class="form-group">
           {{loginForm.csrf_token}}
         </div>
-        <div class="form-group">
+        <div id="password" class="form-group">
           {{render_field(loginForm.username, class= "form-control")}}
         </div>
 
         <div class="form-group">
           {{render_field(loginForm.password, class= "form-control")}}
+          <p id="text" style="display: none; color:red;">WARNING! Caps lock is ON.</p>
         </div>
+
+        <p class="text-p" style="text-align:center;color:#0645AD"> <a href="/changePassword">Forgot password?</a></p>
+
+        <div id="countdown"></div>
 
         <p>Don't have an account? <a href="/signup">Sign Up</a></p>
 
         <div class="form-group">
-          <input type="submit" class="btn btn-success">
+          <input id="btn" type="submit" class="btn btn-success">
         </div>
       </form>
       {% endautoescape %}
     </div> <!--Column-->
   </div> <!--Row-->
 </div> <!--Container-->
+
+<script>
+var input = document.getElementById("btn");
+var input = document.getElementById("username");
+var input = document.getElementById("password");
+var text = document.getElementById("text");
+var tries = {{ tries.get_tries() }} ;
+
+input.addEventListener("keyup", function(event)
+{
+  if (event.getModifierState("CapsLock"))
+  {
+    text.style.display = "block";
+  }
+  else
+  {
+    text.style.display = "none"
+  }
+});
+
+if (tries >= 3)
+  {
+  var timeleft = 30;
+
+  if (tries >= 6)
+  {
+    timeleft = 120;
+   }
+
+  var downloadTimer = setInterval(function() {
+    if (timeleft <= 0)
+    {
+      clearInterval(downloadTimer);
+      document.getElementById("countdown").style.display="none";
+      document.getElementById("btn").disabled=false;
+    }
+    else
+    {
+      document.getElementById("countdown").innerHTML = timeleft + " seconds remaining before you can log in again";
+      document.getElementById("btn").disabled=true;
+    }
+    timeleft -= 1;
+  }, 1000);
+}
+else
+{
+  document.getElementById("countdown").style.display = "none";
+}
+</script>
+
 {% endblock %}
