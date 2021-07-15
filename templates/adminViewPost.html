@@ -37,12 +37,17 @@
         </span> <!--Votes-->
 
                 <form method="POST" class="mt-4 collapse" id="commentForm">
+
                     <div class="form-group">
                         {{ commentForm.csrf_token }}
                     </div>
                     <hr class="mx-auto w-100 mb-4">
                     <div class="form-group">
                         {{render_field_no_label(commentForm.comment, class= "form-control")}}
+                    </div>
+
+                    <div class="form-group">
+                        {{render_field_no_label(commentForm.userID,value=session['userID'], class= "form-control")}}
                     </div>
                     <div class="form-group">
                         <button type="button" class="btn btn-secondary cancel-form" data-toggle="collapse"
@@ -92,7 +97,8 @@
                 <p>{{ comment.Content }}</p>
 
                 <div class="comment-functions text-right" id="comment-votes-{{ comment.CommentID }}">
-                    <a href="#" data-toggle="modal" data-target="#replyModal" data-id="{{ comment.CommentID }}"><i
+                    <a href="#" data-toggle="modal" data-target="#replyModal{{comment.CommentID}}"
+                       data-id="{{ comment.CommentID }}"><i
                             class="fa fa-reply"></i> Reply</a>
                     <a onclick="commentVote(this);" data-vote="1" data-comment="{{ comment.CommentID }}" class="ml-3"><i
                             class="fa fa-arrow-up {% if comment.UserVote==1 %}active{% endif %}"></i></a>
@@ -101,12 +107,44 @@
                             class="fa fa-arrow-down {% if comment.UserVote==-1 %}active{% endif %}"></i></a>
                 </div> <!--Votes-->
 
+
+                <div class="modal fade" id="replyModal{{comment.CommentID}}" tabindex="-1" role="dialog"
+                     aria-labelledby="replyModal" aria-hidden="true">
+                    <div class="modal-dialog modal-lg" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Reply Comment</h5>
+                                <button type="button" class="close cancel-form" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                            <div class="modal-body">
+                                <form method="POST" id="replyForm{{comment.CommentID}}">
+                                    <div class="form-group">
+                                        {{ replyForm.csrf_token }}
+                                    </div>
+                                    {{ render_field_no_label(replyForm.reply, class= "form-control") }}
+                                    {{ render_field_no_label(replyForm.userID,value=session['userID'], class=
+                                    "form-control") }}
+                                    {{ render_field_no_label(replyForm.repliedID,value=comment.CommentID, class=
+                                    "form-control") }}
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary cancel-form" data-dismiss="modal">Close
+                                </button>
+                                <input type="submit" form="replyForm{{comment.CommentID}}" class="btn btn-success">
+                            </div>
+                        </div> <!--Modal content-->
+                    </div> <!--Modal dislog-->
+                </div> <!--Main Modal div-->
+
+
                 {% if comment.ReplyList!=None %}
                 {% for reply in comment.ReplyList %}
                 <div class="sub-comment">
                     <p class="comment-meta">
-                        <a href="/adminProfile/{{reply.Username}}">{{ reply.Username }}</a> on {{ reply.DatetimePosted
-                        }}
+                        <a href="/adminProfile/{{reply.Username}}">{{ reply.Username }}</a> on {{ reply.DatetimePosted }}
                     </p>
                     <p>{{ reply.Content }}</p>
                 </div> <!--Sub Comment-->
@@ -119,35 +157,8 @@
         </div> <!--Column-->
     </div> <!--Row-->
 </div> <!--Container-->
-
-<div class="modal fade" id="replyModal" tabindex="-1" role="dialog" aria-labelledby="replyModal" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Reply Comment</h5>
-                <button type="button" class="close cancel-form" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form method="POST" id="replyForm">
-                    <div class="form-group">
-                        {{ replyForm.csrf_token }}
-                    </div>
-                    {{ render_field_no_label(replyForm.reply, class= "form-control") }}
-                    {{ render_field_no_label(replyForm.repliedID, class= "form-control") }}
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary cancel-form" data-dismiss="modal">Close</button>
-                <input type="submit" form="replyForm" class="btn btn-success">
-            </div>
-        </div> <!--Modal content-->
-    </div> <!--Modal dislog-->
-</div> <!--Main Modal div-->
-
-
 {% endautoescape %}
+
 {% endblock %}
 
 {% block scripts %}
@@ -205,6 +216,7 @@ document.querySelectorAll('.cancel-form').forEach(item => {
     $('#reply').val('')
   })
 })
+
 
 </script>
 {% endblock %}
