@@ -34,6 +34,9 @@
         </span> <!--Votes-->
 
         <form method="POST" class="mt-4 collapse" id="commentForm">
+          <div class="form-group">
+            {{ commentForm.csrf_token }}
+          </div>
           <hr class="mx-auto w-100 mb-4">
           <div class="form-group">
             {{render_field_no_label(commentForm.comment, class= "form-control")}}
@@ -96,6 +99,9 @@
         </div>
         <div class="modal-body">
           <form method="POST" id="replyForm">
+            <div class="form-group">
+              {{ replyForm.csrf_token }}
+            </div>
             {{ render_field_no_label(replyForm.reply, class= "form-control") }}
             {{ render_field_no_label(replyForm.repliedID, class= "form-control") }}
           </form>

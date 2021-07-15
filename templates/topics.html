@@ -42,7 +42,9 @@
 
  <!--For all the posts-->
     <div class="col-md-9">
-
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+        </form>
         <div class="topics">
 
             {% for topic in listOfTopics %}
