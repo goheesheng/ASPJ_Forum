@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, send_from_directory, session,get_flashed_messages
+from flask_talisman import Talisman
 import mysql.connector, re, random
 import Forms
 from datetime import datetime, timedelta # for session timeout
@@ -35,6 +36,18 @@ print(tupleCursor)
 
 app = Flask(__name__)
 
+csp = {
+    'default-src': [
+        '\'self\'',
+        'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js',
+        'https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js',
+        'https://code.jquery.com/jquery-3.5.1.slim.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
+        'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css'
+
+    ]
+}
+talisman = Talisman(app, content_security_policy=csp)
 # # define flask-login configuration
 # login_mgr = LoginManager()
 # login_mgr.init_app(app)     # app is a flask object
@@ -760,6 +773,7 @@ def profile(username):
 
     return render_template("profile.html", currentPage = "myProfile", **session, userData = userData, recentPosts = recentPosts,
     updateEmailForm=updateEmailForm, updateUsernameForm=updateUsernameForm, updateStatusForm=updateStatusForm)
+
 
 
 user_to_url = {}
