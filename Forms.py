@@ -50,6 +50,8 @@ class UpdateStatus(baseform):
     status = StringField('Status')
 
 class UpdatePassword(baseform):
+    email = StringField('Email Address', [validators.DataRequired(), validators.Regexp(r'^.+@[^.].*\.[a-z]{2,10}$', message="Invalid email address.")])
+    username = StringField('Username', [validators.DataRequired()])
     password = PasswordField('New Password', [
         validators.DataRequired(),
         validators.Regexp(re.compile('^(?=\S{10,20}$)(?=.*?\d)(?=.*?[a-z])(?=.*?[A-Z])(?=.*?[^A-Za-z\s0-9])'), message= "Password must contain 10-20 characters, number, uppercase, lowercase, special character."),
