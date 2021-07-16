@@ -1,3 +1,14 @@
+//document.addEventListener('DOMContentLoaded', function() {
+//  document.getElementById("click-thisup").addEventListener("click", postVote(button));
+//});
+document.getElementById("click-thisup").addEventListener("click", postVote(button));
+
+//function myFunction(){
+//  console.log('asd');
+//}
+//document.addEventListener('DOMContentLoaded', function() {
+//  document.getElementById("click-thisdown").addEventListener("click", postVote(button));
+//});
 function postVote(button) {
   var voteValue = button.getAttribute("data-vote");
   var postID = button.getAttribute("data-post");

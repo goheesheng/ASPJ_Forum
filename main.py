@@ -42,17 +42,24 @@ app = Flask(__name__)
 "same host, and same port as the file the content policy is defined in. " \
 "Serving your site over HTTP? No https for you then, unless you define it explicitly."
 csp = {
-    'default-src': [
+    'script-src': [
         '\'self\'',
         'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js',
         'https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js',
         'https://code.jquery.com/jquery-3.5.1.slim.min.js',
         'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
         'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css',
-        'http://127.0.0.1:5000/templates/viewPost.html'
+        'http://127.0.0.1:5000/templates/login.html',
+        'http://127.0.0.1:5000/templates/home.html'
+        # 'http://127.0.0.1:5000/static/scripts/post-votes.js',
+        # 'http://127.0.0.1:5000/static/bootstrap-4.3.1-dist/js/bootstrap.js',
+        # 'http://127.0.0.1:5000/static/bootstrap-4.3.1-dist/js/bootstrap.min.js',
+        # 'http://127.0.0.1:5000/static/bootstrap-4.3.1-dist/jquery-3.4.1.min.js'
+
     ]
+
 }
-talisman = Talisman(app, content_security_policy=csp)
+talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src'])
 # # define flask-login configuration
 # login_mgr = LoginManager()
 # login_mgr.init_app(app)     # app is a flask object
@@ -96,7 +103,6 @@ mail = Mail(app)
 # # if 'Session timeout, please re-login.' not in get_flashed_messages() and (request.referrer != request.base_url+"/login?next=%2Flogout" or '/static/' not in request.path):
 # #     print("entered")
 # # flash('Session timeout, please re-login.','warning')
-
 
 @login_manager.user_loader
 def load_user(UserID):
@@ -304,14 +310,14 @@ def home():
     print(session)
     searchBarForm = Forms.SearchBarForm(request.form)
     searchBarForm.topic.choices = get_all_topics('all')
-    if request.method=="GET":
-        session['csrf_token']= base64.b64encode(os.urandom(16))
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and searchBarForm.validate():
-        print(searchBarForm.csrf_token.data) #technically we translate the bytes to literally string
+        print(searchBarForm.csrf_token.data)  # technically we translate the bytes to literally string
         print(type(searchBarForm.csrf_token.data))
         print(session['csrf_token'])
-        if searchBarForm.csrf_token.data!=str((session['csrf_token'])):
+        if searchBarForm.csrf_token.data != str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and searchBarForm.validate():
@@ -348,14 +354,14 @@ def searchPosts():
     searchBarForm = Forms.SearchBarForm(request.form)
     searchBarForm.topic.choices = get_all_topics('all')
 
-    if request.method=="GET":
-        session['csrf_token']= base64.b64encode(os.urandom(16))
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and searchBarForm.validate():
-        print(searchBarForm.csrf_token.data) #technically we translate the bytes to literally string
+        print(searchBarForm.csrf_token.data)  # technically we translate the bytes to literally string
         print(type(searchBarForm.csrf_token.data))
         print(session['csrf_token'])
-        if searchBarForm.csrf_token.data!=str((session['csrf_token'])):
+        if searchBarForm.csrf_token.data != str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and searchBarForm.validate():
@@ -440,14 +446,14 @@ def viewPost(postID):
     replyForm = Forms.ReplyForm(request.form)
     replyForm.userID.data = session.get('userID')
 
-    if request.method=="GET":
-        session['csrf_token']= base64.b64encode(os.urandom(16))
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
 
-    if request.method == "POST" and loginForm.validate():
-        print(loginForm.csrf_token.data) #technically we translate the bytes to literally string
-        print(type(loginForm.csrf_token.data))
+    if request.method == "POST" and commentForm.validate():
+        print(commentForm.csrf_token.data)  # technically we translate the bytes to literally string
+        print(type(commentForm.csrf_token.data))
         print(session['csrf_token'])
-        if loginForm.csrf_token.data!=str((session['csrf_token'])):
+        if commentForm.csrf_token.data != str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and commentForm.validate():
@@ -482,14 +488,14 @@ def addPost():
     postForm = Forms.PostForm(request.form)
     postForm.topic.choices = get_all_topics('default')
     postForm.userID.data = session.get('userID')
-    if request.method=="GET":
-        session['csrf_token']= base64.b64encode(os.urandom(16))
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and postForm.validate():
-        print(postForm.csrf_token.data) #technically we translate the bytes to literally string
+        print(postForm.csrf_token.data)  # technically we translate the bytes to literally string
         print(type(postForm.csrf_token.data))
         print(session['csrf_token'])
-        if postForm.csrf_token.data!=str((session['csrf_token'])):
+        if postForm.csrf_token.data != str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and postForm.validate():
@@ -508,14 +514,14 @@ def addPost():
 def feedback():
     feedbackForm = Forms.FeedbackForm(request.form)
     feedbackForm.userID.data = session.get('userID')
-    if request.method=="GET":
-        session['csrf_token']= base64.b64encode(os.urandom(16))
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and feedbackForm.validate():
-        print(feedbackForm.csrf_token.data) #technically we translate the bytes to literally string
+        print(feedbackForm.csrf_token.data)  # technically we translate the bytes to literally string
         print(type(feedbackForm.csrf_token.data))
         print(session['csrf_token'])
-        if feedbackForm.csrf_token.data!=str((session['csrf_token'])):
+        if feedbackForm.csrf_token.data != str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and feedbackForm.validate():
@@ -537,17 +543,16 @@ def login():
     # if form is submitted
     loginForm = Forms.LoginForm(request.form)
 
-    if request.method=="GET":
-        session['csrf_token']= base64.b64encode(os.urandom(16))
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and loginForm.validate():
-        print(loginForm.csrf_token.data) #technically we translate the bytes to literally string
+        print(loginForm.csrf_token.data)  # technically we translate the bytes to literally string
         print(type(loginForm.csrf_token.data))
         print(session['csrf_token'])
-        if loginForm.csrf_token.data!=str((session['csrf_token'])):
+        if loginForm.csrf_token.data != str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
-
 
         sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
         val = (loginForm.username.data,)
@@ -607,21 +612,20 @@ def logout():
     # return render_template('home.html', timed_out=timed_out)
 
 
-
-#flask_wtf is shit
+# flask_wtf is shit
 # sign up final stage
 @app.route('/login/<link>', methods=["GET", "POST"])
 def otp(link):
     global temp_signup
     otpform = Forms.OTPForm(request.form)
     if request.method == "GET":
-        session['csrf_token']= base64.b64encode(os.urandom(16))
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and otpform.validate():
-        print(otpform.csrf_token.data) #technically we translate the bytes to literally string
+        print(otpform.csrf_token.data)  # technically we translate the bytes to literally string
         print(type(otpform.csrf_token.data))
         print(session['csrf_token'])
-        if otpform.csrf_token.data!=str((session['csrf_token'])):
+        if otpform.csrf_token.data != str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     sql = "SELECT otp, TIME_TO_SEC(TIMEDIFF(%s, Time_Created)) from otp WHERE link = %s"  # set timer for opt 3 mins, time_created was created in db schema
@@ -721,14 +725,14 @@ def signUp():
     global temp_signup
     signUpForm = Forms.SignUpForm(request.form)
     otpform = Forms.OTPForm(request.form)
-    if request.method=="GET":
-        session['csrf_token']= base64.b64encode(os.urandom(16))
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and signUpForm.validate():
-        print(signUpForm.csrf_token.data) #technically we translate the bytes to literally string
+        print(signUpForm.csrf_token.data)  # technically we translate the bytes to literally string
         print(type(signUpForm.csrf_token.data))
         print(session['csrf_token'])
-        if signUpForm.csrf_token.data!=str((session['csrf_token'])):
+        if signUpForm.csrf_token.data != str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and signUpForm.validate():
@@ -1224,14 +1228,14 @@ def addTopic():
 
     topicForm = Forms.TopicForm(request.form)
     topicForm.topic.choices = listOfTopics
-    if request.method=="GET":
-        session['csrf_token']= base64.b64encode(os.urandom(16))
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and topicForm.validate():
-        print(topicForm.csrf_token.data) #technically we translate the bytes to literally string
+        print(topicForm.csrf_token.data)  # technically we translate the bytes to literally string
         print(type(topicForm.csrf_token.data))
         print(session['csrf_token'])
-        if topicForm.csrf_token.data!=str((session['csrf_token'])):
+        if topicForm.csrf_token.data != str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and topicForm.validate():
