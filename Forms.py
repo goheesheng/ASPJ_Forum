@@ -82,3 +82,6 @@ class TopicForm(baseform):
 class OTPForm(baseform):
     otp = StringField('OTP', [validators.DataRequired()])
 
+class enterUsernameForm(Form):
+    # for forget password
+    enterUsername = StringField('Username', [validators.DataRequired()])

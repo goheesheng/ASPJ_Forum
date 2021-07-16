@@ -104,6 +104,7 @@ mail = Mail(app)
 # #     print("entered")
 # # flash('Session timeout, please re-login.','warning')
 
+
 @login_manager.user_loader
 def load_user(UserID):
     # sql = "SELECT UserID from user"
@@ -310,14 +311,14 @@ def home():
     print(session)
     searchBarForm = Forms.SearchBarForm(request.form)
     searchBarForm.topic.choices = get_all_topics('all')
-    if request.method == "GET":
-        session['csrf_token'] = base64.b64encode(os.urandom(16))
+    if request.method=="GET":
+        session['csrf_token']= base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and searchBarForm.validate():
-        print(searchBarForm.csrf_token.data)  # technically we translate the bytes to literally string
+        print(searchBarForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(searchBarForm.csrf_token.data))
         print(session['csrf_token'])
-        if searchBarForm.csrf_token.data != str((session['csrf_token'])):
+        if searchBarForm.csrf_token.data!=str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and searchBarForm.validate():
@@ -354,14 +355,14 @@ def searchPosts():
     searchBarForm = Forms.SearchBarForm(request.form)
     searchBarForm.topic.choices = get_all_topics('all')
 
-    if request.method == "GET":
-        session['csrf_token'] = base64.b64encode(os.urandom(16))
+    if request.method=="GET":
+        session['csrf_token']= base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and searchBarForm.validate():
-        print(searchBarForm.csrf_token.data)  # technically we translate the bytes to literally string
+        print(searchBarForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(searchBarForm.csrf_token.data))
         print(session['csrf_token'])
-        if searchBarForm.csrf_token.data != str((session['csrf_token'])):
+        if searchBarForm.csrf_token.data!=str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and searchBarForm.validate():
@@ -488,14 +489,14 @@ def addPost():
     postForm = Forms.PostForm(request.form)
     postForm.topic.choices = get_all_topics('default')
     postForm.userID.data = session.get('userID')
-    if request.method == "GET":
-        session['csrf_token'] = base64.b64encode(os.urandom(16))
+    if request.method=="GET":
+        session['csrf_token']= base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and postForm.validate():
-        print(postForm.csrf_token.data)  # technically we translate the bytes to literally string
+        print(postForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(postForm.csrf_token.data))
         print(session['csrf_token'])
-        if postForm.csrf_token.data != str((session['csrf_token'])):
+        if postForm.csrf_token.data!=str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and postForm.validate():
@@ -514,14 +515,14 @@ def addPost():
 def feedback():
     feedbackForm = Forms.FeedbackForm(request.form)
     feedbackForm.userID.data = session.get('userID')
-    if request.method == "GET":
-        session['csrf_token'] = base64.b64encode(os.urandom(16))
+    if request.method=="GET":
+        session['csrf_token']= base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and feedbackForm.validate():
-        print(feedbackForm.csrf_token.data)  # technically we translate the bytes to literally string
+        print(feedbackForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(feedbackForm.csrf_token.data))
         print(session['csrf_token'])
-        if feedbackForm.csrf_token.data != str((session['csrf_token'])):
+        if feedbackForm.csrf_token.data!=str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and feedbackForm.validate():
@@ -543,57 +544,57 @@ def login():
     # if form is submitted
     loginForm = Forms.LoginForm(request.form)
 
-    if request.method == "GET":
-        session['csrf_token'] = base64.b64encode(os.urandom(16))
+    if request.method=="GET":
+        session['csrf_token']= base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and loginForm.validate():
-        print(loginForm.csrf_token.data)  # technically we translate the bytes to literally string
+        print(loginForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(loginForm.csrf_token.data))
         print(session['csrf_token'])
-        if loginForm.csrf_token.data != str((session['csrf_token'])):
+        if loginForm.csrf_token.data!=str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
-
-        sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
-        val = (loginForm.username.data,)
-        dictCursor.execute(sql, val)
-        findUser = dictCursor.fetchone()
-        if findUser == None:
-            loginForm.password.errors.append('Wrong username or password.')
-            tries.add_tries(1)
-
-        elif loginForm.password.data != findUser["Password"]:
-
-            loginForm.password.errors.append('Wrong username or password.')
-            tries.add_tries(1)
-
         else:
-            tries.reset_tries()
-            # flask session timeout
-            user = User(findUser['UserID'])
-            login_user(user)
-
-            session['login'] = True
-            session['userID'] = int(findUser['UserID'])
-            session['username'] = findUser['Username']
-
-            sql = "SELECT * FROM admin WHERE UserID=%s"
-            val = (int(findUser['UserID']),)
+            sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
+            val = (loginForm.username.data,)
             dictCursor.execute(sql, val)
-            findAdmin = dictCursor.fetchone()
-            sql = "UPDATE user SET LoginAttempts = %s WHERE Username = %s"
-            val = (str(0), findUser['Username'])
-            tupleCursor.execute(sql, val)
-            db.commit()
-            flash('Welcome! You are now logged in as %s.' % (session['username']), 'success')
-            if findAdmin != None:
-                session['isAdmin'] = True
-                return redirect('/adminHome')
-            else:
-                session['isAdmin'] = False
-                return redirect('/home')
+            findUser = dictCursor.fetchone()
+            if findUser == None:
+                loginForm.password.errors.append('Wrong username or password.')
+                tries.add_tries(1)
 
-        render_template("login.html", loginForm=loginForm, tries=tries)
+            elif loginForm.password.data != findUser["Password"]:
+
+                loginForm.password.errors.append('Wrong username or password.')
+                tries.add_tries(1)
+
+            else:
+                tries.reset_tries()
+                # flask session timeout
+                user = User(findUser['UserID'])
+                login_user(user)
+
+                session['login'] = True
+                session['userID'] = int(findUser['UserID'])
+                session['username'] = findUser['Username']
+
+                sql = "SELECT * FROM admin WHERE UserID=%s"
+                val = (int(findUser['UserID']),)
+                dictCursor.execute(sql, val)
+                findAdmin = dictCursor.fetchone()
+                sql = "UPDATE user SET LoginAttempts = %s WHERE Username = %s"
+                val = (str(0), findUser['Username'])
+                tupleCursor.execute(sql, val)
+                db.commit()
+                flash('Welcome! You are now logged in as %s.' % (session['username']), 'success')
+                if findAdmin != None:
+                    session['isAdmin'] = True
+                    return redirect('/adminHome')
+                else:
+                    session['isAdmin'] = False
+                    return redirect('/home')
+
+            render_template("login.html", loginForm=loginForm, tries=tries)
     return render_template("login.html", loginForm=loginForm, tries=tries)
 
 
@@ -612,20 +613,21 @@ def logout():
     # return render_template('home.html', timed_out=timed_out)
 
 
-# flask_wtf is shit
+
+#flask_wtf is shit
 # sign up final stage
 @app.route('/login/<link>', methods=["GET", "POST"])
 def otp(link):
     global temp_signup
     otpform = Forms.OTPForm(request.form)
     if request.method == "GET":
-        session['csrf_token'] = base64.b64encode(os.urandom(16))
+        session['csrf_token']= base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and otpform.validate():
-        print(otpform.csrf_token.data)  # technically we translate the bytes to literally string
+        print(otpform.csrf_token.data) #technically we translate the bytes to literally string
         print(type(otpform.csrf_token.data))
         print(session['csrf_token'])
-        if otpform.csrf_token.data != str((session['csrf_token'])):
+        if otpform.csrf_token.data!=str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     sql = "SELECT otp, TIME_TO_SEC(TIMEDIFF(%s, Time_Created)) from otp WHERE link = %s"  # set timer for opt 3 mins, time_created was created in db schema
@@ -725,14 +727,14 @@ def signUp():
     global temp_signup
     signUpForm = Forms.SignUpForm(request.form)
     otpform = Forms.OTPForm(request.form)
-    if request.method == "GET":
-        session['csrf_token'] = base64.b64encode(os.urandom(16))
+    if request.method=="GET":
+        session['csrf_token']= base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and signUpForm.validate():
-        print(signUpForm.csrf_token.data)  # technically we translate the bytes to literally string
+        print(signUpForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(signUpForm.csrf_token.data))
         print(session['csrf_token'])
-        if signUpForm.csrf_token.data != str((session['csrf_token'])):
+        if signUpForm.csrf_token.data!=str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and signUpForm.validate():
@@ -896,69 +898,100 @@ def profile(username):
                            updateStatusForm=updateStatusForm)
 
 
-user_to_url = {}
-
-
-@app.route('/changePassword/<username>', methods=["GET"])
-def changePassword(username):
-    global user_to_url
-    url = secrets.token_urlsafe()
-    sql = "INSERT INTO password_url(Url) VALUES(%s)"
-    val = (url,)
-    tupleCursor.execute(sql, val)
-    db.commit()
-    user_to_url[url] = username
-    user_email = "SELECT Email FROM user WHERE user.username=%s"
-    val = (username,)
-    tupleCursor.execute(user_email, val)
-    user_email = tupleCursor.fetchone()
-    abs_url = "http://127.0.0.1:5000/reset/" + url
-    try:
-        msg = Message("ASPJ Forum",
-                      sender=os.environ['MAIL_USERNAME'],
-                      recipients=[user_email[0]])
-        msg.body = "Password Change"
-        msg.html = render_template('email.html', postID="change password", username=username, content=0, posted=0,
-                                   url=abs_url)
-        mail.send(msg)
-    except Exception as e:
-        print(e)
-        print("Error:", sys.exc_info()[0])
-        print("goes into except")
-    else:
-        flash('A change password link has been sent to your email. Use it to update your password.', 'success')
-        flash('The password link will expire in 10 mins', 'warning')
-        if session['isAdmin']:
-            return redirect('/adminProfile/' + str(username))
+# for forget password
+@app.route('/enterUsername', methods=['GET', 'POST'])
+def getUsername():
+    usernameForm = Forms.enterUsernameForm(request.form)
+    if request.method == "POST" and usernameForm.validate():
+        sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
+        val = (usernameForm.enterUsername.data,)
+        dictCursor.execute(sql, val)
+        findUser = dictCursor.fetchone()
+        if findUser == None:
+            usernameForm.enterUsername.errors.append('Wrong username entered.')
         else:
-            return redirect('/profile/' + str(username))
+            return redirect('/changePssword')
+    return render_template('enterUsername.html', usernameForm=usernameForm)
 
 
-@app.route('/reset/<url>', methods=["GET", "POST"])
-def resetPassword(url):
-    global user_to_url
-    sql = "SELECT TIME_TO_SEC(TIMEDIFF(%s, Time_Created)) FROM password_url WHERE Url = %s"
-    val = (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), url)
-    tupleCursor.execute(sql, val)
-    reset = tupleCursor.fetchone()
-    if reset[0] > 600:
-        sql = "DELETE FROM password_url WHERE Url = %s"
-        val = (url,)
-        flash("Your password reset link has expired, please try again!", "danger")
-        return redirect("/home")
-    else:
-        changePasswordForm = Forms.UpdatePassword(request.form)
-        if request.method == "POST" and changePasswordForm.validate():
-            username = user_to_url[url]
-            password = changePasswordForm.password.data
-            sql = "UPDATE user SET Password=%s WHERE Username=%s"
-            val = (str(password), username)
-            tupleCursor.execute(sql, val)
-            db.commit()
-            user_to_url.pop(url)
-            flash("Password has been successfully reset", 'success')
-            return redirect("/login")
-        return render_template("changePassword.html", changePasswordForm=changePasswordForm)
+# changing password after entering the username
+@app.route('/changePassword', methods=["GET", "POST"])
+def resetpassword():
+    changePasswordForm = Forms.UpdatePassword(request.form)
+    if request.method == "POST" and changePasswordForm.validate():
+        password = changePasswordForm.password.data
+        sql = "UPDATE user SET Password=%s WHERE Username=%s"
+        val = (str(password), username)
+        tupleCursor.execute(sql, val)
+        db.commit()
+        flash("Password has been successfully reset",'success')
+        return redirect("/login")
+    return render_template('changePassword.html', changePasswordForm=changePasswordForm)
+
+
+# user_to_url = {}
+#
+#
+# @app.route('/changePassword/<username>', methods=["GET"])
+# def changePassword(username):
+#     global user_to_url
+#     url = secrets.token_urlsafe()
+#     sql = "INSERT INTO password_url(Url) VALUES(%s)"
+#     val = (url,)
+#     tupleCursor.execute(sql, val)
+#     db.commit()
+#     user_to_url[url] = username
+#     user_email = "SELECT Email FROM user WHERE user.username=%s"
+#     val = (username,)
+#     tupleCursor.execute(user_email, val)
+#     user_email = tupleCursor.fetchone()
+#     abs_url = "http://127.0.0.1:5000/reset/" + url
+#     try:
+#         msg = Message("ASPJ Forum",
+#                       sender=os.environ['MAIL_USERNAME'],
+#                       recipients=[user_email[0]])
+#         msg.body = "Password Change"
+#         msg.html = render_template('email.html', postID="change password", username=username, content=0, posted=0,
+#                                    url=abs_url)
+#         mail.send(msg)
+#     except Exception as e:
+#         print(e)
+#         print("Error:", sys.exc_info()[0])
+#         print("goes into except")
+#     else:
+#         flash('A change password link has been sent to your email. Use it to update your password.', 'success')
+#         flash('The password link will expire in 10 mins', 'warning')
+#         if session['isAdmin']:
+#             return redirect('/adminProfile/' + str(username))
+#         else:
+#             return redirect('/profile/' + str(username))
+#
+#
+# @app.route('/reset/<url>', methods=["GET", "POST"])
+# def resetPassword(url):
+#     global user_to_url
+#     sql = "SELECT TIME_TO_SEC(TIMEDIFF(%s, Time_Created)) FROM password_url WHERE Url = %s"
+#     val = (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), url)
+#     tupleCursor.execute(sql, val)
+#     reset = tupleCursor.fetchone()
+#     if reset[0] > 600:
+#         sql = "DELETE FROM password_url WHERE Url = %s"
+#         val = (url,)
+#         flash("Your password reset link has expired, please try again!", "danger")
+#         return redirect("/home")
+#     else:
+#         changePasswordForm = Forms.UpdatePassword(request.form)
+#         if request.method == "POST" and changePasswordForm.validate():
+#             username = user_to_url[url]
+#             password = changePasswordForm.password.data
+#             sql = "UPDATE user SET Password=%s WHERE Username=%s"
+#             val = (str(password), username)
+#             tupleCursor.execute(sql, val)
+#             db.commit()
+#             user_to_url.pop(url)
+#             flash("Password has been successfully reset", 'success')
+#             return redirect("/login")
+#         return render_template("changePassword.html", changePasswordForm=changePasswordForm)
 
 
 @app.route('/topics')
@@ -1228,14 +1261,14 @@ def addTopic():
 
     topicForm = Forms.TopicForm(request.form)
     topicForm.topic.choices = listOfTopics
-    if request.method == "GET":
-        session['csrf_token'] = base64.b64encode(os.urandom(16))
+    if request.method=="GET":
+        session['csrf_token']= base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and topicForm.validate():
-        print(topicForm.csrf_token.data)  # technically we translate the bytes to literally string
+        print(topicForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(topicForm.csrf_token.data))
         print(session['csrf_token'])
-        if topicForm.csrf_token.data != str((session['csrf_token'])):
+        if topicForm.csrf_token.data!=str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and topicForm.validate():
