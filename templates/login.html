@@ -14,19 +14,21 @@
       {% autoescape True %}
       <form method="POST" class="mt-4">
 
-        <div  class="form-group">
+        <div class="form-group">
           {{ render_field_no_label(loginForm.csrf_token,value=session['csrf_token'],class='form-control.d-none') }}
         </div>
+
         <div id="username" class="form-group">
           {{render_field(loginForm.username, class= "form-control")}}
         </div>
 
         <div id="password" class="form-group">
           {{render_field(loginForm.password, class= "form-control")}}
-          <p id="text" style="display: none; color:red;">WARNING! Caps lock is ON.</p>
         </div>
 
-        <p class="text-p" style="text-align:center;color:#0645AD"> <a href="/changePassword">Forgot password?</a></p>
+<!--        <p id="text" style="display: none; color:red;">WARNING! Caps lock is ON.</p>-->
+
+        <p class="text-p" style="text-align:center;color:#0645AD"> <a href="/enterUsername">Forgot password?</a></p>
 
         <div id="countdown"></div>
 

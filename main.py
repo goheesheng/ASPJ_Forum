@@ -37,22 +37,22 @@ tupleCursor.execute("SHOW TABLES")
 print(tupleCursor)
 
 app = Flask(__name__)
-"self' means localhost, local filesystem, or anything on the same host. It doesn't mean any of those. " \
-"It means sources that have the same scheme (protocol), " \
-"same host, and same port as the file the content policy is defined in. " \
-"Serving your site over HTTP? No https for you then, unless you define it explicitly."
-csp = {
-    'default-src': [
-        '\'self\'',
-        'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js',
-        'https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js',
-        'https://code.jquery.com/jquery-3.5.1.slim.min.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
-        'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css',
-        'http://127.0.0.1:5000/templates/viewPost.html'
-    ]
-}
-talisman = Talisman(app, content_security_policy=csp)
+# "self' means localhost, local filesystem, or anything on the same host. It doesn't mean any of those. " \
+# "It means sources that have the same scheme (protocol), " \
+# "same host, and same port as the file the content policy is defined in. " \
+# "Serving your site over HTTP? No https for you then, unless you define it explicitly."
+# csp = {
+#     'default-src': [
+#         '\'self\'',
+#         'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js',
+#         'https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js',
+#         'https://code.jquery.com/jquery-3.5.1.slim.min.js',
+#         'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
+#         'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css',
+#         'http://127.0.0.1:5000/templates/viewPost.html'
+#     ]
+# }
+# talisman = Talisman(app, content_security_policy=csp)
 # # define flask-login configuration
 # login_mgr = LoginManager()
 # login_mgr.init_app(app)     # app is a flask object
@@ -547,48 +547,47 @@ def login():
         if loginForm.csrf_token.data!=str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
-
-
-        sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
-        val = (loginForm.username.data,)
-        dictCursor.execute(sql, val)
-        findUser = dictCursor.fetchone()
-        if findUser == None:
-            loginForm.password.errors.append('Wrong username or password.')
-            tries.add_tries(1)
-
-        elif loginForm.password.data != findUser["Password"]:
-
-            loginForm.password.errors.append('Wrong username or password.')
-            tries.add_tries(1)
-
         else:
-            tries.reset_tries()
-            # flask session timeout
-            user = User(findUser['UserID'])
-            login_user(user)
-
-            session['login'] = True
-            session['userID'] = int(findUser['UserID'])
-            session['username'] = findUser['Username']
-
-            sql = "SELECT * FROM admin WHERE UserID=%s"
-            val = (int(findUser['UserID']),)
+            sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
+            val = (loginForm.username.data,)
             dictCursor.execute(sql, val)
-            findAdmin = dictCursor.fetchone()
-            sql = "UPDATE user SET LoginAttempts = %s WHERE Username = %s"
-            val = (str(0), findUser['Username'])
-            tupleCursor.execute(sql, val)
-            db.commit()
-            flash('Welcome! You are now logged in as %s.' % (session['username']), 'success')
-            if findAdmin != None:
-                session['isAdmin'] = True
-                return redirect('/adminHome')
-            else:
-                session['isAdmin'] = False
-                return redirect('/home')
+            findUser = dictCursor.fetchone()
+            if findUser == None:
+                loginForm.password.errors.append('Wrong username or password.')
+                tries.add_tries(1)
 
-        render_template("login.html", loginForm=loginForm, tries=tries)
+            elif loginForm.password.data != findUser["Password"]:
+
+                loginForm.password.errors.append('Wrong username or password.')
+                tries.add_tries(1)
+
+            else:
+                tries.reset_tries()
+                # flask session timeout
+                user = User(findUser['UserID'])
+                login_user(user)
+
+                session['login'] = True
+                session['userID'] = int(findUser['UserID'])
+                session['username'] = findUser['Username']
+
+                sql = "SELECT * FROM admin WHERE UserID=%s"
+                val = (int(findUser['UserID']),)
+                dictCursor.execute(sql, val)
+                findAdmin = dictCursor.fetchone()
+                sql = "UPDATE user SET LoginAttempts = %s WHERE Username = %s"
+                val = (str(0), findUser['Username'])
+                tupleCursor.execute(sql, val)
+                db.commit()
+                flash('Welcome! You are now logged in as %s.' % (session['username']), 'success')
+                if findAdmin != None:
+                    session['isAdmin'] = True
+                    return redirect('/adminHome')
+                else:
+                    session['isAdmin'] = False
+                    return redirect('/home')
+
+            render_template("login.html", loginForm=loginForm, tries=tries)
     return render_template("login.html", loginForm=loginForm, tries=tries)
 
 
@@ -892,69 +891,100 @@ def profile(username):
                            updateStatusForm=updateStatusForm)
 
 
-user_to_url = {}
-
-
-@app.route('/changePassword/<username>', methods=["GET"])
-def changePassword(username):
-    global user_to_url
-    url = secrets.token_urlsafe()
-    sql = "INSERT INTO password_url(Url) VALUES(%s)"
-    val = (url,)
-    tupleCursor.execute(sql, val)
-    db.commit()
-    user_to_url[url] = username
-    user_email = "SELECT Email FROM user WHERE user.username=%s"
-    val = (username,)
-    tupleCursor.execute(user_email, val)
-    user_email = tupleCursor.fetchone()
-    abs_url = "http://127.0.0.1:5000/reset/" + url
-    try:
-        msg = Message("ASPJ Forum",
-                      sender=os.environ['MAIL_USERNAME'],
-                      recipients=[user_email[0]])
-        msg.body = "Password Change"
-        msg.html = render_template('email.html', postID="change password", username=username, content=0, posted=0,
-                                   url=abs_url)
-        mail.send(msg)
-    except Exception as e:
-        print(e)
-        print("Error:", sys.exc_info()[0])
-        print("goes into except")
-    else:
-        flash('A change password link has been sent to your email. Use it to update your password.', 'success')
-        flash('The password link will expire in 10 mins', 'warning')
-        if session['isAdmin']:
-            return redirect('/adminProfile/' + str(username))
+# for forget password
+@app.route('/enterUsername', methods=['GET', 'POST'])
+def getUsername():
+    usernameForm = Forms.enterUsernameForm(request.form)
+    if request.method == "POST" and usernameForm.validate():
+        sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
+        val = (usernameForm.enterUsername.data,)
+        dictCursor.execute(sql, val)
+        findUser = dictCursor.fetchone()
+        if findUser == None:
+            usernameForm.enterUsername.errors.append('Wrong username entered.')
         else:
-            return redirect('/profile/' + str(username))
+            return redirect('/changePssword')
+    return render_template('enterUsername.html', usernameForm=usernameForm)
 
 
-@app.route('/reset/<url>', methods=["GET", "POST"])
-def resetPassword(url):
-    global user_to_url
-    sql = "SELECT TIME_TO_SEC(TIMEDIFF(%s, Time_Created)) FROM password_url WHERE Url = %s"
-    val = (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), url)
-    tupleCursor.execute(sql, val)
-    reset = tupleCursor.fetchone()
-    if reset[0] > 600:
-        sql = "DELETE FROM password_url WHERE Url = %s"
-        val = (url,)
-        flash("Your password reset link has expired, please try again!", "danger")
-        return redirect("/home")
-    else:
-        changePasswordForm = Forms.UpdatePassword(request.form)
-        if request.method == "POST" and changePasswordForm.validate():
-            username = user_to_url[url]
-            password = changePasswordForm.password.data
-            sql = "UPDATE user SET Password=%s WHERE Username=%s"
-            val = (str(password), username)
-            tupleCursor.execute(sql, val)
-            db.commit()
-            user_to_url.pop(url)
-            flash("Password has been successfully reset", 'success')
-            return redirect("/login")
-        return render_template("changePassword.html", changePasswordForm=changePasswordForm)
+# changing password after entering the username
+@app.route('/changePassword', methods=["GET", "POST"])
+def resetpassword():
+    changePasswordForm = Forms.UpdatePassword(request.form)
+    if request.method == "POST" and changePasswordForm.validate():
+        password = changePasswordForm.password.data
+        sql = "UPDATE user SET Password=%s WHERE Username=%s"
+        val = (str(password), username)
+        tupleCursor.execute(sql, val)
+        db.commit()
+        flash("Password has been successfully reset",'success')
+        return redirect("/login")
+    return render_template('changePassword.html', changePasswordForm=changePasswordForm)
+
+
+# user_to_url = {}
+#
+#
+# @app.route('/changePassword/<username>', methods=["GET"])
+# def changePassword(username):
+#     global user_to_url
+#     url = secrets.token_urlsafe()
+#     sql = "INSERT INTO password_url(Url) VALUES(%s)"
+#     val = (url,)
+#     tupleCursor.execute(sql, val)
+#     db.commit()
+#     user_to_url[url] = username
+#     user_email = "SELECT Email FROM user WHERE user.username=%s"
+#     val = (username,)
+#     tupleCursor.execute(user_email, val)
+#     user_email = tupleCursor.fetchone()
+#     abs_url = "http://127.0.0.1:5000/reset/" + url
+#     try:
+#         msg = Message("ASPJ Forum",
+#                       sender=os.environ['MAIL_USERNAME'],
+#                       recipients=[user_email[0]])
+#         msg.body = "Password Change"
+#         msg.html = render_template('email.html', postID="change password", username=username, content=0, posted=0,
+#                                    url=abs_url)
+#         mail.send(msg)
+#     except Exception as e:
+#         print(e)
+#         print("Error:", sys.exc_info()[0])
+#         print("goes into except")
+#     else:
+#         flash('A change password link has been sent to your email. Use it to update your password.', 'success')
+#         flash('The password link will expire in 10 mins', 'warning')
+#         if session['isAdmin']:
+#             return redirect('/adminProfile/' + str(username))
+#         else:
+#             return redirect('/profile/' + str(username))
+#
+#
+# @app.route('/reset/<url>', methods=["GET", "POST"])
+# def resetPassword(url):
+#     global user_to_url
+#     sql = "SELECT TIME_TO_SEC(TIMEDIFF(%s, Time_Created)) FROM password_url WHERE Url = %s"
+#     val = (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), url)
+#     tupleCursor.execute(sql, val)
+#     reset = tupleCursor.fetchone()
+#     if reset[0] > 600:
+#         sql = "DELETE FROM password_url WHERE Url = %s"
+#         val = (url,)
+#         flash("Your password reset link has expired, please try again!", "danger")
+#         return redirect("/home")
+#     else:
+#         changePasswordForm = Forms.UpdatePassword(request.form)
+#         if request.method == "POST" and changePasswordForm.validate():
+#             username = user_to_url[url]
+#             password = changePasswordForm.password.data
+#             sql = "UPDATE user SET Password=%s WHERE Username=%s"
+#             val = (str(password), username)
+#             tupleCursor.execute(sql, val)
+#             db.commit()
+#             user_to_url.pop(url)
+#             flash("Password has been successfully reset", 'success')
+#             return redirect("/login")
+#         return render_template("changePassword.html", changePasswordForm=changePasswordForm)
 
 
 @app.route('/topics')
