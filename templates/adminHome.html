@@ -9,6 +9,7 @@
 
 {% block content %}
 {% from "includes/_formhelper.html" import render_field_no_label %}
+{% from "includes/_formhelper.html" import render_field_no_label %}
 <div class="container my-4">
   <div class="row justify-content-center">
     <div class="col-md-12">
@@ -45,9 +46,10 @@
 
     <div class="col-md-9"> <!--For all the posts-->
       <form method="POST" class="form-group row">
-         <div class="form-group">
-           {{ searchBarForm.csrf_token }}
-         </div>
+        <div  class="form-group">
+          {{ render_field_no_label(searchBarForm.csrf_token,value=session['csrf_token'],class='form-control.d-none') }}
+        </div>
+
         <div class="col-md-8">
           <div class="input-group">
             {{ render_field_no_label(searchBarForm.searchQuery, class="form-control rounded-pill py-2 pr-5 mr-1") }}
