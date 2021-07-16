@@ -50,11 +50,7 @@ csp = {
         'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
         'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css',
         'http://127.0.0.1:5000/templates/login.html',
-        'http://127.0.0.1:5000/templates/home.html'
-        # 'http://127.0.0.1:5000/static/scripts/post-votes.js',
-        # 'http://127.0.0.1:5000/static/bootstrap-4.3.1-dist/js/bootstrap.js',
-        # 'http://127.0.0.1:5000/static/bootstrap-4.3.1-dist/js/bootstrap.min.js',
-        # 'http://127.0.0.1:5000/static/bootstrap-4.3.1-dist/jquery-3.4.1.min.js'
+
 
     ]
 
@@ -159,6 +155,7 @@ def postVote():
         return make_response(jsonify({'message': 'Please log in to vote.'}), 401)
 
     data = request.get_json(force=True)
+    print(data)
     currentVote = DatabaseManager.get_user_post_vote(str(session.get('userID')), data['postID'])
 
     if currentVote == None:

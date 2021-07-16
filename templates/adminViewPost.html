@@ -29,10 +29,10 @@
                 <span class="post-votes ml-auto float-right" id="post-votes-{{ post.PostID }}">
           <a href="#" data-toggle="modal" data-target="#DeletePostModal"><i class="fa fa-trash" aria-hidden="true"></i></a>
           <a class="cancel-form" data-toggle="collapse" href="#commentForm"><i class="fa fa-comment"></i> Comment</a>
-          <a onclick="postVote(this);" data-vote="1" data-post="{{ post.PostID }}" class="ml-3"><i
+          <a class="upvote" id="upvote0" data-vote="1" data-post="{{ post.PostID }}" class="ml-3"><i
                   class="fa fa-arrow-up {% if post.UserVote==1 %}active{% endif %}"></i></a>
-          <span id="postTotalVotes">{{ post.TotalVotes }}</span>
-          <a onclick="postVote(this);" data-vote="-1" data-post="{{ post.PostID }}"><i
+          <span id="postTotalVotes{{post.PostID}}">{{ post.TotalVotes }}</span>
+          <a class="downvote" id="downvote0" data-vote="-1" data-post="{{ post.PostID }}"><i
                   class="fa fa-arrow-down {% if post.UserVote==-1 %}active{% endif %}"></i></a>
         </span> <!--Votes-->
 
@@ -95,16 +95,19 @@
                     }}
                 </p>
 
+                {% autoescape True %}
                 <p>{{ comment.Content }}</p>
+                {% endautoescape %}
+
 
                 <div class="comment-functions text-right" id="comment-votes-{{ comment.CommentID }}">
                     <a href="#" data-toggle="modal" data-target="#replyModal{{comment.CommentID}}"
                        data-id="{{ comment.CommentID }}"><i
                             class="fa fa-reply"></i> Reply</a>
-                    <a onclick="commentVote(this);" data-vote="1" data-comment="{{ comment.CommentID }}" class="ml-3"><i
+                    <a class="upvotecomment" id="upvotecomment{{loop.index-1}}" data-vote="1" data-comment="{{ comment.CommentID }}" class="ml-3"><i
                             class="fa fa-arrow-up {% if comment.UserVote==1 %}active{% endif %}"></i></a>
-                    <span id="commentTotalVotes">{{ comment.TotalVotes }}</span>
-                    <a onclick="commentVote(this);" data-vote="-1" data-comment="{{ comment.CommentID }}"><i
+                    <span id="commentTotalVotes{{comment.CommentID}}">{{ comment.TotalVotes }}</span>
+                    <a class="downvotecomment" id="downvotecomment{{loop.index-1}}" data-vote="-1" data-comment="{{ comment.CommentID }}"><i
                             class="fa fa-arrow-down {% if comment.UserVote==-1 %}active{% endif %}"></i></a>
                 </div> <!--Votes-->
 
@@ -164,62 +167,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/scripts/post-votes.js"></script>
-<script>
-function commentVote(button) {
-  var voteValue = button.getAttribute("data-vote");
-  var commentID = button.getAttribute("data-comment");
-
-  fetch('/commentVote', {
-    headers: new Headers({
-      "content-type": "application/json"
-    }),
-    method: 'POST',
-    body: JSON.stringify({
-        "voteValue": voteValue,
-        "commentID": commentID
-    })
-  })
-
-  .then(function (response) { // At this point, Flask has printed our JSON
-    response.json().then(function(data) {
-      if (response.status === 401) {
-        location.reload();
-      }
-
-      else {
-        if (data['toggleUpvote']==true) {
-          document.querySelector('#comment-votes-' + data['commentID'] + ' [data-vote="1"] i.fa-arrow-up').classList.toggle('active');
-        }
-
-        if (data['toggleDownvote']) {
-          document.querySelector('#comment-votes-' + data['commentID'] + ' [data-vote="-1"] i.fa-arrow-down').classList.toggle('active');
-        }
-
-        document.querySelector('#comment-votes-' + data['commentID'] + ' #commentTotalVotes').innerText = data['updatedCommentTotal'];
-      }
-    });
-  }).catch(function (error) {
-      console.log("Fetch error: " + error['message']);
-  });
-}
-
-$('#replyModal').on('show.bs.modal', function (event) {
-  var button = $(event.relatedTarget)
-  var commentID = button.data('id')
-  var modal = $(this)
-  modal.find('#repliedID').val(commentID)
-})
-
-document.querySelectorAll('.cancel-form').forEach(item => {
-  item.addEventListener('click', event => {
-    $('#comment').val('')
-    $('#repliedID').val('')
-    $('#reply').val('')
-  })
-})
-
-
-
-</script>
+<script type="text/javascript" src="../../static/scripts/post-votes.js"></script>
 {% endblock %}

@@ -55,7 +55,9 @@
 
             <form method="POST" class="form-group row">
                 <div class="form-group">
-                    {{ searchBarForm.csrf_token }}
+                    {{
+                    render_field_no_label(searchBarForm.csrf_token,value=session['csrf_token'],class='form-control.d-none')
+                    }}
                 </div>
                 <div class="col-md-8">
                     <div class="input-group">
@@ -87,26 +89,26 @@
                         </h2>
                     </a>
                     <span class="post-meta">Posted by
-            {%if login%}
-                <a href="/profile/{{post.Username}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} |
-            {%else%}
-                <a href="/login">{{ post.Username }}</a> on {{ post.DatetimePosted }} |
-            {%endif%}
+                        {%if login%}
+                            <a href="/profile/{{post.Username}}">{{ post.Username }}</a> on {{ post.DatetimePosted }} |
+                        {%else%}
+                            <a href="/login">{{ post.Username }}</a> on {{ post.DatetimePosted }} |
+                        {%endif%}
 
-            {%if login%}
-                <a href="/indivTopic/{{post.TopicID}}">{{ post.Topic }}</a>
-            {%else%}
-                <a href="/login">{{ post.Topic }}</a>
-            {%endif%}
-          </span>
+                        {%if login%}
+                            <a href="/indivTopic/{{post.TopicID}}">{{ post.Topic }}</a>
+                        {%else%}
+                            <a href="/login">{{ post.Topic }}</a>
+                        {%endif%}
+                    </span>
 
                     <span class="post-votes ml-auto float-right" id="post-votes-{{ post.PostID }}">
-            <a id="click-thisup" data-vote="1" data-post="{{ post.PostID }}"><i
-                    class="fa fa-arrow-up {% if post.UserVote==1 %}active{% endif %}"></i></a>
-            <span id="postTotalVotes">{{ post.TotalVotes }}</span>
-            <a id="click-thisdown" data-vote="-1" data-post="{{ post.PostID }}"><i
-                    class="fa fa-arrow-down {% if post.UserVote==-1 %}active{% endif %}"></i></a>
-            </span> <!--Votes-->
+                <a id="upvote{{loop.index-1}}" data-vote="1" data-post="{{ post.PostID }}" class="upvote"><i
+                        class="fa fa-arrow-up {% if post.UserVote==1 %}active{% endif %}"></i></a>
+                <span id="postTotalVotes{{post.PostID}}">{{ post.TotalVotes }}</span>
+                <a data-vote="-1" id="downvote{{loop.index-1}}" data-post="{{ post.PostID }}" class='downvote'><i
+                        class="fa fa-arrow-down {% if post.UserVote==-1 %}active{% endif %}"></i></a>
+                </span> <!--Votes-->
             </div> <!--Post-->
             {% endfor %}
 
@@ -120,5 +122,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="static/scripts/post-votes.js"></script>
+<script type="text/javascript" src="static/scripts/post-votes.js"></script>
 {% endblock %}
