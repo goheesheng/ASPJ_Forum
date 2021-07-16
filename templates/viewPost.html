@@ -38,8 +38,11 @@
 
                 <form method="POST" class="mt-4 collapse" id="commentForm">
                     <div class="form-group">
-                        {{ commentForm.csrf_token }}
+                        {{
+                        render_field_no_label(commentForm.csrf_token,value=session['csrf_token'],class='form-control.d-none')
+                        }}
                     </div>
+
                     <hr class="mx-auto w-100 mb-4">
                     <div class="form-group">
                         {{render_field_no_label(commentForm.comment, class= "form-control")}}
@@ -93,7 +96,8 @@
                 {% endif %}
 
             </div> <!--Comment-->
-            <div class="modal fade" id="replyModal{{ comment.CommentID }}" tabindex="-1" role="dialog" aria-labelledby="replyModal"
+            <div class="modal fade" id="replyModal{{ comment.CommentID }}" tabindex="-1" role="dialog"
+                 aria-labelledby="replyModal"
                  aria-hidden="true">
                 <div class="modal-dialog modal-lg" role="document">
                     <div class="modal-content">
@@ -105,28 +109,31 @@
                         </div>
                         <div class="modal-body">
                             <form method="POST" id="replyForm{{ comment.CommentID }}">
-                                <div class="form-group">
-                                    {{ replyForm.csrf_token }}
-                                </div>
-                                {{ render_field_no_label(replyForm.reply, class= "form-control") }}
-                                {{ render_field_no_label(replyForm.userID,value=session['userID'], class=
-                                "form-control") }}
-                                {{ render_field_no_label(replyForm.repliedID,value=comment.CommentID, class=
-                                "form-control") }}
-                            </form>
+                                div class="form-group">
+                                {{
+                                render_field_no_label(replyForm.csrf_token,value=session['csrf_token'],class='form-control.d-none')
+                                }}
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary cancel-form" data-dismiss="modal">Close
-                            </button>
-                            <input type="submit" form="replyForm{{comment.CommentID}}" class="btn btn-success">
-                        </div>
-                    </div> <!--Modal content-->
-                </div> <!--Modal dislog-->
-            </div> <!--Main Modal div-->
-            {% endfor %}
 
-        </div> <!--Column-->
-    </div> <!--Row-->
+                        {{ render_field_no_label(replyForm.reply, class= "form-control") }}
+                        {{ render_field_no_label(replyForm.userID,value=session['userID'], class=
+                        "form-control") }}
+                        {{ render_field_no_label(replyForm.repliedID,value=comment.CommentID, class=
+                        "form-control") }}
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary cancel-form" data-dismiss="modal">Close
+                        </button>
+                        <input type="submit" form="replyForm{{comment.CommentID}}" class="btn btn-success">
+                    </div>
+                </div> <!--Modal content-->
+            </div> <!--Modal dislog-->
+        </div> <!--Main Modal div-->
+        {% endfor %}
+
+    </div> <!--Column-->
+</div> <!--Row-->
 </div> <!--Container-->
 
 
@@ -187,6 +194,7 @@ document.querySelectorAll('.cancel-form').forEach(item => {
     $('#reply').val('')
   })
 })
+
 
 
 

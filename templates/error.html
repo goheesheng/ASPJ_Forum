@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col">
+    <h1>{{msg}}</h1>
+    <hr>
+    {% if admin == 1 %}
+    <a href="/adminHome">Home</a>
+    {% else %}
+    <a href="/home">Home</a>
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock %}

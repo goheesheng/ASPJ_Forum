@@ -11,8 +11,8 @@
       <h1>New Post</h1>
 
       <form method="POST" class="mt-4">
-        <div class="form-group">
-            {{ postForm.csrf_token }}
+        <div  class="form-group">
+          {{ render_field_no_label(postForm.csrf_token,value=session['csrf_token'],class='form-control.d-none') }}
         </div>
         <div class="form-group">
           {{render_field(postForm.topic, class= "form-control")}}

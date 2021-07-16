@@ -4,6 +4,8 @@
 
 {% block content %}
 {% from "includes/_formhelper.html" import render_field %}
+{% from "includes/_formhelper.html" import render_field_no_label %}
+
 {% from "includes/_flash.html" import flash %}
 <div class="container mt-4">
   <div class="row justify-content-center">
@@ -12,14 +14,14 @@
       {% autoescape True %}
       <form method="POST" class="mt-4">
 
-        <div id="username" class="form-group">
-          {{loginForm.csrf_token}}
+        <div  class="form-group">
+          {{ render_field_no_label(loginForm.csrf_token,value=session['csrf_token'],class='form-control.d-none') }}
         </div>
-        <div id="password" class="form-group">
+        <div id="username" class="form-group">
           {{render_field(loginForm.username, class= "form-control")}}
         </div>
 
-        <div class="form-group">
+        <div id="password" class="form-group">
           {{render_field(loginForm.password, class= "form-control")}}
           <p id="text" style="display: none; color:red;">WARNING! Caps lock is ON.</p>
         </div>

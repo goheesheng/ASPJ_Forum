@@ -15,8 +15,8 @@
       <h1>Feedback</h1>
 
       <form method="POST" class="mt-4">
-        <div class="form-group">
-            {{ feedbackForm.csrf_token }}
+        <div  class="form-group">
+          {{ render_field_no_label(feedbackForm.csrf_token,value=session['csrf_token'],class='form-control.d-none') }}
         </div>
         <div class="form-group">
           {{render_field(feedbackForm.reason, class= "form-control")}}

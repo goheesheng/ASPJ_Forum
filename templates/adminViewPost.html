@@ -37,9 +37,10 @@
         </span> <!--Votes-->
 
                 <form method="POST" class="mt-4 collapse" id="commentForm">
-
                     <div class="form-group">
-                        {{ commentForm.csrf_token }}
+                        {{
+                        render_field_no_label(commentForm.csrf_token,value=session['csrf_token'],class='form-control.d-none')
+                        }}
                     </div>
                     <hr class="mx-auto w-100 mb-4">
                     <div class="form-group">
@@ -144,7 +145,8 @@
                 {% for reply in comment.ReplyList %}
                 <div class="sub-comment">
                     <p class="comment-meta">
-                        <a href="/adminProfile/{{reply.Username}}">{{ reply.Username }}</a> on {{ reply.DatetimePosted }}
+                        <a href="/adminProfile/{{reply.Username}}">{{ reply.Username }}</a> on {{ reply.DatetimePosted
+                        }}
                     </p>
                     <p>{{ reply.Content }}</p>
                 </div> <!--Sub Comment-->
@@ -216,6 +218,7 @@ document.querySelectorAll('.cancel-form').forEach(item => {
     $('#reply').val('')
   })
 })
+
 
 
 </script>
