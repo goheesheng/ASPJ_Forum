@@ -73,7 +73,9 @@
                             <div class="modal-footer">
                                 <form method="POST" action="/adminDeletePost/{{post.PostID}}">
                                     <div class="form-group">
-                                        {{ commentForm.csrf_token }}
+                                        {{
+                                        render_field_no_label(commentForm.csrf_token,value=session['csrf_token'],class='form-control.d-none')
+                                        }}
                                     </div>
                                     <button type="submit" class="btn btn-danger">Delete</button>
                                 </form>
@@ -104,10 +106,12 @@
                     <a href="#" data-toggle="modal" data-target="#replyModal{{comment.CommentID}}"
                        data-id="{{ comment.CommentID }}"><i
                             class="fa fa-reply"></i> Reply</a>
-                    <a class="upvotecomment" id="upvotecomment{{loop.index-1}}" data-vote="1" data-comment="{{ comment.CommentID }}" class="ml-3"><i
+                    <a class="upvotecomment" id="upvotecomment{{loop.index-1}}" data-vote="1"
+                       data-comment="{{ comment.CommentID }}" class="ml-3"><i
                             class="fa fa-arrow-up {% if comment.UserVote==1 %}active{% endif %}"></i></a>
                     <span id="commentTotalVotes{{comment.CommentID}}">{{ comment.TotalVotes }}</span>
-                    <a class="downvotecomment" id="downvotecomment{{loop.index-1}}" data-vote="-1" data-comment="{{ comment.CommentID }}"><i
+                    <a class="downvotecomment" id="downvotecomment{{loop.index-1}}" data-vote="-1"
+                       data-comment="{{ comment.CommentID }}"><i
                             class="fa fa-arrow-down {% if comment.UserVote==-1 %}active{% endif %}"></i></a>
                 </div> <!--Votes-->
 

@@ -774,6 +774,15 @@ def profile(username):
     updateEmailForm = Forms.UpdateEmail(request.form)
     updateUsernameForm = Forms.UpdateUsername(request.form)
     updateStatusForm = Forms.UpdateStatus(request.form)
+    if request.method=="GET":
+        session['csrf_token']= base64.b64encode(os.urandom(16))
+    if request.method == "POST" and updateUsernameForm.validate():
+        print(updateUsernameForm.csrf_token.data) #technically we translate the bytes to literally string
+        print(type(updateUsernameForm.csrf_token.data))
+        print(session['csrf_token'])
+        if updateUsernameForm.csrf_token.data!=str((session['csrf_token'])):
+            # print('enter')
+            return redirect(url_for('login'))
     sql = "SELECT Username, Status, Email FROM user WHERE user.Username=%s"
     val = (username,)
     dictCursor.execute(sql, val)
@@ -802,9 +811,11 @@ def profile(username):
         sql += "WHERE UserID = %s"
         try:
             val = (updateEmailForm.email.data, str(session["userID"]))
+            print(val,str(session["userID"]),'12222222222222222222222222222222222222222222222222222222222')
             tupleCursor.execute(sql, val, )
             db.commit()
-
+        except KeyError as errorMsg:  # Prevent error-based sql attack
+            abort(404)
         except mysql.connector.errors.IntegrityError as errorMsg:  # Prevent error-based sql attack
             errorMsg = str(errorMsg)
             if 'email' in errorMsg.lower():
@@ -926,43 +937,43 @@ def resetpassword():
     return render_template('changePassword.html', changePasswordForm=changePasswordForm)
 
 
-# user_to_url = {}
-#
-#
-# @app.route('/changePassword/<username>', methods=["GET"])
-# def changePassword(username):
-#     global user_to_url
-#     url = secrets.token_urlsafe()
-#     sql = "INSERT INTO password_url(Url) VALUES(%s)"
-#     val = (url,)
-#     tupleCursor.execute(sql, val)
-#     db.commit()
-#     user_to_url[url] = username
-#     user_email = "SELECT Email FROM user WHERE user.username=%s"
-#     val = (username,)
-#     tupleCursor.execute(user_email, val)
-#     user_email = tupleCursor.fetchone()
-#     abs_url = "http://127.0.0.1:5000/reset/" + url
-#     try:
-#         msg = Message("ASPJ Forum",
-#                       sender=os.environ['MAIL_USERNAME'],
-#                       recipients=[user_email[0]])
-#         msg.body = "Password Change"
-#         msg.html = render_template('email.html', postID="change password", username=username, content=0, posted=0,
-#                                    url=abs_url)
-#         mail.send(msg)
-#     except Exception as e:
-#         print(e)
-#         print("Error:", sys.exc_info()[0])
-#         print("goes into except")
-#     else:
-#         flash('A change password link has been sent to your email. Use it to update your password.', 'success')
-#         flash('The password link will expire in 10 mins', 'warning')
-#         if session['isAdmin']:
-#             return redirect('/adminProfile/' + str(username))
-#         else:
-#             return redirect('/profile/' + str(username))
-#
+user_to_url = {}
+
+
+@app.route('/changePassword/<username>', methods=["GET"])
+def changePassword(username):
+    global user_to_url
+    url = secrets.token_urlsafe()
+    sql = "INSERT INTO password_url(Url) VALUES(%s)"
+    val = (url,)
+    tupleCursor.execute(sql, val)
+    db.commit()
+    user_to_url[url] = username
+    user_email = "SELECT Email FROM user WHERE user.username=%s"
+    val = (username,)
+    tupleCursor.execute(user_email, val)
+    user_email = tupleCursor.fetchone()
+    abs_url = "http://127.0.0.1:5000/reset/" + url
+    try:
+        msg = Message("ASPJ Forum",
+                      sender=os.environ['MAIL_USERNAME'],
+                      recipients=[user_email[0]])
+        msg.body = "Password Change"
+        msg.html = render_template('email.html', postID="change password", username=username, content=0, posted=0,
+                                   url=abs_url)
+        mail.send(msg)
+    except Exception as e:
+        print(e)
+        print("Error:", sys.exc_info()[0])
+        print("goes into except")
+    else:
+        flash('A change password link has been sent to your email. Use it to update your password.', 'success')
+        flash('The password link will expire in 10 mins', 'warning')
+        if session['isAdmin']:
+            return redirect('/adminProfile/' + str(username))
+        else:
+            return redirect('/profile/' + str(username))
+
 #
 # @app.route('/reset/<url>', methods=["GET", "POST"])
 # def resetPassword(url):
@@ -1395,8 +1406,8 @@ def make_session_permanent():
 def error404(e):
     msg = 'Oops! Page not found. Head back to the home page'
     title = 'Error 404'
-    admin = session['isAdmin']
-    return render_template('error.html', msg=msg, admin=admin, title=title)
+    # admin = session['isAdmin']
+    return render_template('error.html', msg=msg, title=title)
 
 
 # @app.errorhandler(500)
