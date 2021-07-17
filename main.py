@@ -37,22 +37,25 @@ tupleCursor.execute("SHOW TABLES")
 print(tupleCursor)
 
 app = Flask(__name__)
-# "self' means localhost, local filesystem, or anything on the same host. It doesn't mean any of those. " \
-# "It means sources that have the same scheme (protocol), " \
-# "same host, and same port as the file the content policy is defined in. " \
-# "Serving your site over HTTP? No https for you then, unless you define it explicitly."
-# csp = {
-#     'default-src': [
-#         '\'self\'',
-#         'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js',
-#         'https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js',
-#         'https://code.jquery.com/jquery-3.5.1.slim.min.js',
-#         'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
-#         'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css',
-#         'http://127.0.0.1:5000/templates/viewPost.html'
-#     ]
-# }
-# talisman = Talisman(app, content_security_policy=csp)
+"self' means localhost, local filesystem, or anything on the same host. It doesn't mean any of those. " \
+"It means sources that have the same scheme (protocol), " \
+"same host, and same port as the file the content policy is defined in. " \
+"Serving your site over HTTP? No https for you then, unless you define it explicitly."
+csp = {
+    'script-src': [
+        '\'self\'',
+        'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js',
+        'https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js',
+        'https://code.jquery.com/jquery-3.5.1.slim.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
+        'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css',
+        'http://127.0.0.1:5000/templates/login.html',
+
+
+    ]
+
+}
+talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src'])
 # # define flask-login configuration
 # login_mgr = LoginManager()
 # login_mgr.init_app(app)     # app is a flask object
@@ -152,6 +155,7 @@ def postVote():
         return make_response(jsonify({'message': 'Please log in to vote.'}), 401)
 
     data = request.get_json(force=True)
+    print(data)
     currentVote = DatabaseManager.get_user_post_vote(str(session.get('userID')), data['postID'])
 
     if currentVote == None:
@@ -440,14 +444,14 @@ def viewPost(postID):
     replyForm = Forms.ReplyForm(request.form)
     replyForm.userID.data = session.get('userID')
 
-    if request.method=="GET":
-        session['csrf_token']= base64.b64encode(os.urandom(16))
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
 
-    if request.method == "POST" and loginForm.validate():
-        print(loginForm.csrf_token.data) #technically we translate the bytes to literally string
-        print(type(loginForm.csrf_token.data))
+    if request.method == "POST" and commentForm.validate():
+        print(commentForm.csrf_token.data)  # technically we translate the bytes to literally string
+        print(type(commentForm.csrf_token.data))
         print(session['csrf_token'])
-        if loginForm.csrf_token.data!=str((session['csrf_token'])):
+        if commentForm.csrf_token.data != str((session['csrf_token'])):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and commentForm.validate():
@@ -891,35 +895,183 @@ def profile(username):
                            updateStatusForm=updateStatusForm)
 
 
-# for forget password
-@app.route('/enterUsername', methods=['GET', 'POST'])
-def getUsername():
-    usernameForm = Forms.enterUsernameForm(request.form)
-    if request.method == "POST" and usernameForm.validate():
-        sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
-        val = (usernameForm.enterUsername.data,)
-        dictCursor.execute(sql, val)
-        findUser = dictCursor.fetchone()
-        if findUser == None:
-            usernameForm.enterUsername.errors.append('Wrong username entered.')
+@app.route('/forgetPasslogin/<link>', methods=["GET","POST"])
+def otp2(link):
+    global temp_resetpass
+    otpform = Forms.OTPForm(request.form)
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
+
+    if request.method == "POST" and otpform.validate():
+        print(otpform.csrf_token.data)
+        print(type(otpform.csrf_token.data))
+        if otpform.csrf_token.data != str((session['csrf_token'])):
+            return redirect(url_for('login'))
+
+    sql = "SELECT otp, TIME_TO_SEC(TIMEDIFF(%s, Time_Created)) from otp WHERE link = %s"
+    val = (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), link)
+    tupleCursor.execute(sql, val)
+    otp = tupleCursor.fetchone()
+    print(val)
+    print(otp, 'otptuple')
+    if otp is None:
+        abort(404)
+    print(otpform.validate())
+    print(otpform.otp.data)
+    if request.method == "POST" and otpform.validate():
+        if otp[1] > 180:
+            flash('Your OTP has expired. Please resubmit the form', 'danger')
+            sql = "DELETE from otp where link =%s"
+            val = (link,)
+            tupleCursor.execute(sql, val)
+            temp_resetpass.get(link)
+            db.commit()
+            return redirect('/forgetPassword')
+        print(otp, 'test')
+        temp_details = temp_resetpass.get(link)
+        print(otp[1], otp[0], otp, 'otp')
+        if str(otp[0]) == otpform.otp.data:
+            try:
+                sql = "UPDATE user SET password=%s WHERE username=%s"
+                val = (temp_details["Username"], temp_details["Password"])
+                tupleCursor.execute(sql, val)
+                db.commit()
+
+            except mysql.connector.errors.IntegrityError as errorMsg:
+                errorMsg = str(errorMsg)
+                print('error here')
+                if 'email' in errorMsg.lower():
+                    otpform.otp.errors.append('The email has already been linked to another account. Please use a different email.')
+                elif 'username' in errorMsg.lower():
+                    otpform.otp.errors.append('This username is already taken.')
+
+            else:
+                print('pass')
+                temp_resetpass.pop(link)
+                sql = "DELETE from otp WHERE link =%s"
+                val = (link,)
+                tupleCursor.execute.sql(sql, val)
+                db.commit()
+                sql = "SELECT UserID, Username FROM user WHERE Username=%s AND Password=%s"
+                val = (temp_details['Username'], temp_details["Password"])
+                tupleCursor.execute(sql, val)
+                findUser = tupleCursor.fetchone()
+                session['login'] = True
+                session['userID'] = int(findUser[0])
+                session['username'] = findUser[1]
+
+                flash('Account password changed successfully! You are now logged in as %s.' % (session['username']), 'success')
+                return redirect('/home')
+
+        # elif temp_details[
+        #     "Resend count"] <3:
+        #     print('resend')
+        #     temp_details["Resend count"] += 1
+        #     OTP = random.randint(100000, 999999)
+        #     sql = "UPDATE otp SET otp =%s WHERE link =%s"
+        #     val = (OTP, link)
+        #     tupleCursor.execute(sql, val)
+        #     db.commit()
+        #     try:
+        #         msg = Message("ASPJ Forget Password",
+        #                       sender = os.environ["MAIL_USERNAME"],
+        #                       recipients = [temp_details['Email']])
+        #         msg.body = "OTP for Forget Password"
+        #         msg.html = render_template('otp_email.html', OTP=OTP, username=temp_details["Username"])
+        #         mail.send(msg)
+        #     except Exception as e:
+        #         print(e)
+        #         print("Error:", sys.exc_info()[0])
+        #         print("goes into except")
+        #     else:
+        #         flash("Wrong OTP, please try again!", "warning")
+        #         return redirect("/forgetPasslogin/" + link)
+
         else:
-            return redirect('/changePssword')
-    return render_template('enterUsername.html', usernameForm=usernameForm)
+            flash("You have failed OTP too many times. Please recheck your details before submitting the form!", 'danger')
+            return redirect('/forgetPassword')
+    return render_template('otp.html', otpform=otpform)
 
 
-# changing password after entering the username
-@app.route('/changePassword', methods=["GET", "POST"])
-def resetpassword():
-    changePasswordForm = Forms.UpdatePassword(request.form)
-    if request.method == "POST" and changePasswordForm.validate():
-        password = changePasswordForm.password.data
-        sql = "UPDATE user SET Password=%s WHERE Username=%s"
-        val = (str(password), username)
+temp_resetpass = {}
+# forget password feature
+@app.route('/forgetpassword', methods=["GET", "POST"])
+def resetpass():
+    global temp_resetpass
+    forgetPasswordForm = Forms.UpdatePassword(request.form)
+    otpform = Forms.OTPForm(request.form)
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
+
+    if request.method == "POST" and forgetPasswordForm.validate():
+        print(forgetPasswordForm.csrf_token.data)
+        print(type(forgetPasswordForm.data))
+        print(session['csrf_token'])
+        if forgetPasswordForm.csrf_token.data != str((session['csrf_token'])):
+            return redirect(url_for('login'))
+
+    if request.method == "POST" and forgetPasswordForm.validate():
+        temp_details = {}
+        temp_details["Email"] = forgetPasswordForm.email.data
+        temp_details["Username"] = forgetPasswordForm.username.data
+        temp_details["Password"] = forgetPasswordForm.password.data
+        temp_details["ConfirmPassword"] = forgetPasswordForm.confirmPassword.data
+        temp_details["Resend count"] = 0
+        OTP = random.randint(100000, 999999)
+        link = secrets.token_urlsafe()
+        temp_signup[link] = temp_details
+        sql = "INSERT INTO otp (link, otp) VALUES (%s, %s)"
+        val = (link, str(OTP))
         tupleCursor.execute(sql, val)
         db.commit()
-        flash("Password has been successfully reset",'success')
-        return redirect("/login")
-    return render_template('changePassword.html', changePasswordForm=changePasswordForm)
+        try:
+            msg = Message("ASPJ Forum Forget Password",
+                          sender = os.environ.get('MAIL_USERNAME'),
+                          recipients = [temp_details["Email"]])
+            msg.body = "OTP for Forget Password"
+            msg.html = render_template('otp_email.html', OTP=OTP, username=temp_details["Username"])
+            mail.send(msg)
+        except Exception as e:
+            print(e)
+            print("Error:", sys.exc_info()[0])
+            print("goes into except")
+        else:
+            flash('Please enter the OTP that was sent to your email.', 'warning')
+            flash('The OTP will expire in 3 mins', 'warning')
+            return redirect("/forgetPasslogin/" + str(link))
+    return render_template('forgetpassword.html', currentPage='forgetPassword', **session, forgetPasswordForm=forgetPasswordForm, otpform=otpform)
+
+
+# if all fails work on this
+# # for forget password
+# @app.route('/enterUsername', methods=['GET', 'POST'])
+# def getUsername():
+#     usernameForm = Forms.enterUsernameForm(request.form)
+#     if request.method == "POST" and usernameForm.validate():
+#         sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
+#         val = (usernameForm.enterUsername.data,)
+#         dictCursor.execute(sql, val)
+#         findUser = dictCursor.fetchone()
+#         if findUser == None:
+#             usernameForm.enterUsername.errors.append('Wrong username entered.')
+#         else:
+#             return redirect('/changePssword')
+#     return render_template('enterUsername.html', usernameForm=usernameForm)
+#
+#
+# # changing password after entering the username
+# @app.route('/changePassword', methods=["GET", "POST"])
+# def resetpassword():
+#     changePasswordForm = Forms.UpdatePassword(request.form)
+#     if request.method == "POST" and changePasswordForm.validate():
+#         password = changePasswordForm.password.data
+#         sql = "UPDATE user SET Password=%s WHERE Username=%s"
+#         val = (str(password), username)
+#         tupleCursor.execute(sql, val)
+#         db.commit()
+#         flash("Password has been successfully reset",'success')
+#         return redirect("/login")
+#     return render_template('forgetpassword.html', changePasswordForm=changePasswordForm)
 
 
 # user_to_url = {}
@@ -984,7 +1136,7 @@ def resetpassword():
 #             user_to_url.pop(url)
 #             flash("Password has been successfully reset", 'success')
 #             return redirect("/login")
-#         return render_template("changePassword.html", changePasswordForm=changePasswordForm)
+#         return render_template("forgetpassword.html", changePasswordForm=changePasswordForm)
 
 
 @app.route('/topics')
@@ -1391,7 +1543,7 @@ def make_session_permanent():
 def error404(e):
     msg = 'Oops! Page not found. Head back to the home page'
     title = 'Error 404'
-    admin = session['isAdmin']
+    admin = session.get('isAdmin')
     return render_template('error.html', msg=msg, admin=admin, title=title)
 
 
