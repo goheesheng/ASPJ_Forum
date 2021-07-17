@@ -1,19 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, \
     send_from_directory, session, get_flashed_messages, abort
 from flask_talisman import Talisman
+from functools import wraps
 import mysql.connector, re, random
 import Forms
 from datetime import datetime, timedelta  # for session timeout
-# Flask mail
 import os
 import base64
 import secrets  # for the otp token
 from flask_mail import Mail, Message
 import sys
-import asyncio
-from threading import Thread
 import DatabaseManager
-from flask_login import LoginManager, login_required, login_user, logout_user, current_user, UserMixin
+
 
 # Do set this
 # os.environ['DB_USERNAME'] = 'ASPJuser'
@@ -56,18 +54,6 @@ csp = {
 
 }
 talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src'])
-# # define flask-login configuration
-# login_mgr = LoginManager()
-# login_mgr.init_app(app)     # app is a flask object
-# login_mgr.login_view = 'login'
-# login_mgr.refresh_view = 'relogin'
-# # login_mgr.needs_refresh_message = (u"Session timeout, please re-login")
-# # login_mgr.needs_refresh_message_category = "info"
-
-app.config.from_object(__name__)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = '.login'
 
 # Do set this, go discord and follow instructions
 # os.environ['MAIL_USERNAME'] = 'appdevescip2003@gmail.com'
@@ -75,6 +61,8 @@ login_manager.login_view = '.login'
 #
 # print(os.environ['MAIL_USERNAME'])
 # print(os.environ['MAIL_PASSWORD'])
+
+
 
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
@@ -100,20 +88,15 @@ mail = Mail(app)
 # #     print("entered")
 # # flash('Session timeout, please re-login.','warning')
 
+def custom_login_required(f):
+    @wraps(f)
+    def wrap(*args,**kwargs):
+        if 'login' not in session or session['login']!=True:
+            flash("Please log in to access this page")
+            return redirect(url_for('login'))
+        return f(*args,**kwargs)
+    return wrap
 
-@login_manager.user_loader
-def load_user(UserID):
-    # sql = "SELECT UserID from user"
-    # val = (UserID,)
-    # dictCursor.excute(sql, val)
-    # userData = dictCursor.fetchone()
-
-    return User(UserID)  # fetch from the database
-
-
-class User(UserMixin):
-    def __init__(self, id):
-        self.id = id
 
 
 # brute force attack prevention on password field
@@ -147,15 +130,15 @@ def get_all_topics(option):
         topicTuples.insert(0, ('0', 'All Topics'))
     return topicTuples
 
+@app.route('/temp', methods=["POST"])
+def temp():
+    flash('Please login to upvote or downvote',"warning")
+    return make_response(jsonify(url_for('login')),200)
 
+@custom_login_required
 @app.route('/postVote', methods=["GET", "POST"])
 def postVote():
-    if not session['login']:
-        flash('You must be logged in to vote.', 'warning')
-        return make_response(jsonify({'message': 'Please log in to vote.'}), 401)
-
     data = request.get_json(force=True)
-    print(data)
     currentVote = DatabaseManager.get_user_post_vote(str(session.get('userID')), data['postID'])
 
     if currentVote == None:
@@ -212,7 +195,7 @@ def postVote():
                                      , 'newVote': newVote, 'updatedVoteTotal': updatedVoteTotal,
                                   'postID': data['postID']}), 200)
 
-
+@custom_login_required
 @app.route('/commentVote', methods=["GET", "POST"])
 def commentVote():
     if not session['login']:
@@ -277,7 +260,6 @@ def commentVote():
                                      , 'newVote': newVote, 'updatedCommentTotal': updatedCommentTotal,
                                   'commentID': data['commentID']}), 200)
 
-
 @app.route('/')
 def main():
     # to check if the user exist or not
@@ -305,7 +287,6 @@ def main():
 
 @app.route('/home', methods=["GET", "POST"])
 def home():
-    print(session)
     searchBarForm = Forms.SearchBarForm(request.form)
     searchBarForm.topic.choices = get_all_topics('all')
     if request.method=="GET":
@@ -341,9 +322,11 @@ def home():
             post['UserVote'] = 0
         post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
         post['Content'] = post['Content'][:200]
-    return render_template('home.html', currentPage='home', **session, searchBarForm=searchBarForm,
-                           recentPosts=recentPosts)
+    print(session)
+    print(get_all_topics('all'))
 
+
+    return render_template('home.html', currentPage='home', **session, searchBarForm=searchBarForm,recentPosts=recentPosts)
 
 @app.route('/searchPosts', methods=["GET", "POST"])
 def searchPosts():
@@ -397,7 +380,7 @@ def searchPosts():
     return render_template('searchPost.html', currentPage='search', **session, searchBarForm=searchBarForm,
                            postList=relatedPosts)
 
-
+@custom_login_required
 @app.route('/viewPost/<int:postID>/', methods=["GET", "POST"])
 def viewPost(postID):
     print('i')
@@ -476,7 +459,7 @@ def viewPost(postID):
     return render_template('viewPost.html', currentPage='viewPost', **session, commentForm=commentForm,
                            replyForm=replyForm, post=post, commentList=commentList)
 
-
+@custom_login_required
 @app.route('/addPost', methods=["GET", "POST"])
 def addPost():
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
@@ -507,7 +490,7 @@ def addPost():
 
     return render_template('addPost.html', currentPage='addPost', **session, postForm=postForm)
 
-
+@custom_login_required
 @app.route('/feedback', methods=["GET", "POST"])
 def feedback():
     feedbackForm = Forms.FeedbackForm(request.form)
@@ -540,7 +523,7 @@ def login():
     # app.permanent_session_lifetime = timedelta(minutes=1)
     # if form is submitted
     loginForm = Forms.LoginForm(request.form)
-
+    print(get_flashed_messages())
     if request.method=="GET":
         session['csrf_token']= base64.b64encode(os.urandom(16))
 
@@ -568,8 +551,6 @@ def login():
             else:
                 tries.reset_tries()
                 # flask session timeout
-                user = User(findUser['UserID'])
-                login_user(user)
 
                 session['login'] = True
                 session['userID'] = int(findUser['UserID'])
@@ -594,15 +575,15 @@ def login():
             render_template("login.html", loginForm=loginForm, tries=tries)
     return render_template("login.html", loginForm=loginForm, tries=tries)
 
-
+@custom_login_required
 @app.route('/logout')
-@login_required  # flask session timeout
+# flask session timeout
 def logout():
-    logout_user()
     # timed_out = request.args.get('timeout')
     # if request.args.get('timeout'):
     #     flash('Session timeout, please re-login.', 'warning')
     session["name"] = None
+    session['isAdmin']=False
     session['login'] = False
     session['userID'] = 0
     session['username'] = ''
@@ -768,8 +749,8 @@ def signUp():
 
     return render_template('signup.html', currentPage='signUp', **session, signUpForm=signUpForm)
 
-
 @app.route('/profile/<username>', methods=["GET", "POST"])
+@custom_login_required
 def profile(username):
     updateEmailForm = Forms.UpdateEmail(request.form)
     updateUsernameForm = Forms.UpdateUsername(request.form)
@@ -906,74 +887,222 @@ def profile(username):
                            updateStatusForm=updateStatusForm)
 
 
-# for forget password
-@app.route('/enterUsername', methods=['GET', 'POST'])
-def getUsername():
-    usernameForm = Forms.enterUsernameForm(request.form)
-    if request.method == "POST" and usernameForm.validate():
-        sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
-        val = (usernameForm.enterUsername.data,)
-        dictCursor.execute(sql, val)
-        findUser = dictCursor.fetchone()
-        if findUser == None:
-            usernameForm.enterUsername.errors.append('Wrong username entered.')
+@app.route('/forgetPasslogin/<link>', methods=["GET","POST"])
+def otp2(link):
+    global temp_resetpass
+    otpform = Forms.OTPForm(request.form)
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
+
+    if request.method == "POST" and otpform.validate():
+        print(otpform.csrf_token.data)
+        print(type(otpform.csrf_token.data))
+        if otpform.csrf_token.data != str((session['csrf_token'])):
+            return redirect(url_for('login'))
+
+    sql = "SELECT otp, TIME_TO_SEC(TIMEDIFF(%s, Time_Created)) from otp WHERE link = %s"
+    val = (datetime.now().strftime('%Y-%m-%d %H:%M:%S'), link)
+    tupleCursor.execute(sql, val)
+    otp = tupleCursor.fetchone()
+    print(val)
+    print(otp, 'otptuple')
+    if otp is None:
+        abort(404)
+    print(otpform.validate())
+    print(otpform.otp.data)
+    if request.method == "POST" and otpform.validate():
+        if otp[1] > 180:
+            flash('Your OTP has expired. Please resubmit the form', 'danger')
+            sql = "DELETE from otp where link =%s"
+            val = (link,)
+            tupleCursor.execute(sql, val)
+            temp_resetpass.get(link)
+            db.commit()
+            return redirect('/forgetPassword')
+        print(otp, 'test')
+        temp_details = temp_resetpass.get(link)
+        print(otp[1], otp[0], otp, 'otp')
+        if str(otp[0]) == otpform.otp.data:
+            try:
+                sql = "UPDATE user SET password=%s WHERE username=%s"
+                val = (temp_details["Username"], temp_details["Password"])
+                tupleCursor.execute(sql, val)
+                db.commit()
+
+            except mysql.connector.errors.IntegrityError as errorMsg:
+                errorMsg = str(errorMsg)
+                print('error here')
+                if 'email' in errorMsg.lower():
+                    otpform.otp.errors.append('The email has already been linked to another account. Please use a different email.')
+                elif 'username' in errorMsg.lower():
+                    otpform.otp.errors.append('This username is already taken.')
+
+            else:
+                print('pass')
+                temp_resetpass.pop(link)
+                sql = "DELETE from otp WHERE link =%s"
+                val = (link,)
+                tupleCursor.execute.sql(sql, val)
+                db.commit()
+                sql = "SELECT UserID, Username FROM user WHERE Username=%s AND Password=%s"
+                val = (temp_details['Username'], temp_details["Password"])
+                tupleCursor.execute(sql, val)
+                findUser = tupleCursor.fetchone()
+                session['login'] = True
+                session['userID'] = int(findUser[0])
+                session['username'] = findUser[1]
+
+                flash('Account password changed successfully! You are now logged in as %s.' % (session['username']), 'success')
+                return redirect('/home')
+
+        # elif temp_details[
+        #     "Resend count"] <3:
+        #     print('resend')
+        #     temp_details["Resend count"] += 1
+        #     OTP = random.randint(100000, 999999)
+        #     sql = "UPDATE otp SET otp =%s WHERE link =%s"
+        #     val = (OTP, link)
+        #     tupleCursor.execute(sql, val)
+        #     db.commit()
+        #     try:
+        #         msg = Message("ASPJ Forget Password",
+        #                       sender = os.environ["MAIL_USERNAME"],
+        #                       recipients = [temp_details['Email']])
+        #         msg.body = "OTP for Forget Password"
+        #         msg.html = render_template('otp_email.html', OTP=OTP, username=temp_details["Username"])
+        #         mail.send(msg)
+        #     except Exception as e:
+        #         print(e)
+        #         print("Error:", sys.exc_info()[0])
+        #         print("goes into except")
+        #     else:
+        #         flash("Wrong OTP, please try again!", "warning")
+        #         return redirect("/forgetPasslogin/" + link)
+
         else:
-            return redirect('/changePssword')
-    return render_template('enterUsername.html', usernameForm=usernameForm)
+            flash("You have failed OTP too many times. Please recheck your details before submitting the form!", 'danger')
+            return redirect('/forgetPassword')
+    return render_template('otp.html', otpform=otpform)
 
 
-# changing password after entering the username
-@app.route('/changePassword', methods=["GET", "POST"])
-def resetpassword():
-    changePasswordForm = Forms.UpdatePassword(request.form)
-    if request.method == "POST" and changePasswordForm.validate():
-        password = changePasswordForm.password.data
-        sql = "UPDATE user SET Password=%s WHERE Username=%s"
-        val = (str(password), username)
+temp_resetpass = {}
+# forget password feature
+@app.route('/forgetpassword', methods=["GET", "POST"])
+def resetpass():
+    global temp_resetpass
+    forgetPasswordForm = Forms.UpdatePassword(request.form)
+    otpform = Forms.OTPForm(request.form)
+    if request.method == "GET":
+        session['csrf_token'] = base64.b64encode(os.urandom(16))
+
+    if request.method == "POST" and forgetPasswordForm.validate():
+        print(forgetPasswordForm.csrf_token.data)
+        print(type(forgetPasswordForm.data))
+        print(session['csrf_token'])
+        if forgetPasswordForm.csrf_token.data != str((session['csrf_token'])):
+            return redirect(url_for('login'))
+
+    if request.method == "POST" and forgetPasswordForm.validate():
+        temp_details = {}
+        temp_details["Email"] = forgetPasswordForm.email.data
+        temp_details["Username"] = forgetPasswordForm.username.data
+        temp_details["Password"] = forgetPasswordForm.password.data
+        temp_details["ConfirmPassword"] = forgetPasswordForm.confirmPassword.data
+        temp_details["Resend count"] = 0
+        OTP = random.randint(100000, 999999)
+        link = secrets.token_urlsafe()
+        temp_signup[link] = temp_details
+        sql = "INSERT INTO otp (link, otp) VALUES (%s, %s)"
+        val = (link, str(OTP))
         tupleCursor.execute(sql, val)
         db.commit()
-        flash("Password has been successfully reset",'success')
-        return redirect("/login")
-    return render_template('changePassword.html', changePasswordForm=changePasswordForm)
-
-
-user_to_url = {}
-
-
-@app.route('/changePassword/<username>', methods=["GET"])
-def changePassword(username):
-    global user_to_url
-    url = secrets.token_urlsafe()
-    sql = "INSERT INTO password_url(Url) VALUES(%s)"
-    val = (url,)
-    tupleCursor.execute(sql, val)
-    db.commit()
-    user_to_url[url] = username
-    user_email = "SELECT Email FROM user WHERE user.username=%s"
-    val = (username,)
-    tupleCursor.execute(user_email, val)
-    user_email = tupleCursor.fetchone()
-    abs_url = "http://127.0.0.1:5000/reset/" + url
-    try:
-        msg = Message("ASPJ Forum",
-                      sender=os.environ['MAIL_USERNAME'],
-                      recipients=[user_email[0]])
-        msg.body = "Password Change"
-        msg.html = render_template('email.html', postID="change password", username=username, content=0, posted=0,
-                                   url=abs_url)
-        mail.send(msg)
-    except Exception as e:
-        print(e)
-        print("Error:", sys.exc_info()[0])
-        print("goes into except")
-    else:
-        flash('A change password link has been sent to your email. Use it to update your password.', 'success')
-        flash('The password link will expire in 10 mins', 'warning')
-        if session['isAdmin']:
-            return redirect('/adminProfile/' + str(username))
+        try:
+            msg = Message("ASPJ Forum Forget Password",
+                          sender = os.environ.get('MAIL_USERNAME'),
+                          recipients = [temp_details["Email"]])
+            msg.body = "OTP for Forget Password"
+            msg.html = render_template('otp_email.html', OTP=OTP, username=temp_details["Username"])
+            mail.send(msg)
+        except Exception as e:
+            print(e)
+            print("Error:", sys.exc_info()[0])
+            print("goes into except")
         else:
-            return redirect('/profile/' + str(username))
+            flash('Please enter the OTP that was sent to your email.', 'warning')
+            flash('The OTP will expire in 3 mins', 'warning')
+            return redirect("/forgetPasslogin/" + str(link))
+    return render_template('forgetpassword.html', currentPage='forgetPassword', **session, forgetPasswordForm=forgetPasswordForm, otpform=otpform)
 
+
+# if all fails work on this
+# # for forget password
+# @app.route('/enterUsername', methods=['GET', 'POST'])
+# def getUsername():
+#     usernameForm = Forms.enterUsernameForm(request.form)
+#     if request.method == "POST" and usernameForm.validate():
+#         sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
+#         val = (usernameForm.enterUsername.data,)
+#         dictCursor.execute(sql, val)
+#         findUser = dictCursor.fetchone()
+#         if findUser == None:
+#             usernameForm.enterUsername.errors.append('Wrong username entered.')
+#         else:
+#             return redirect('/changePssword')
+#     return render_template('enterUsername.html', usernameForm=usernameForm)
+#
+#
+# # changing password after entering the username
+# @app.route('/changePassword', methods=["GET", "POST"])
+# def resetpassword():
+#     changePasswordForm = Forms.UpdatePassword(request.form)
+#     if request.method == "POST" and changePasswordForm.validate():
+#         password = changePasswordForm.password.data
+#         sql = "UPDATE user SET Password=%s WHERE Username=%s"
+#         val = (str(password), username)
+#         tupleCursor.execute(sql, val)
+#         db.commit()
+#         flash("Password has been successfully reset",'success')
+#         return redirect("/login")
+#     return render_template('forgetpassword.html', changePasswordForm=changePasswordForm)
+
+
+# user_to_url = {}
+#
+#
+# @app.route('/changePassword/<username>', methods=["GET"])
+# def changePassword(username):
+#     global user_to_url
+#     url = secrets.token_urlsafe()
+#     sql = "INSERT INTO password_url(Url) VALUES(%s)"
+#     val = (url,)
+#     tupleCursor.execute(sql, val)
+#     db.commit()
+#     user_to_url[url] = username
+#     user_email = "SELECT Email FROM user WHERE user.username=%s"
+#     val = (username,)
+#     tupleCursor.execute(user_email, val)
+#     user_email = tupleCursor.fetchone()
+#     abs_url = "http://127.0.0.1:5000/reset/" + url
+#     try:
+#         msg = Message("ASPJ Forum",
+#                       sender=os.environ['MAIL_USERNAME'],
+#                       recipients=[user_email[0]])
+#         msg.body = "Password Change"
+#         msg.html = render_template('email.html', postID="change password", username=username, content=0, posted=0,
+#                                    url=abs_url)
+#         mail.send(msg)
+#     except Exception as e:
+#         print(e)
+#         print("Error:", sys.exc_info()[0])
+#         print("goes into except")
+#     else:
+#         flash('A change password link has been sent to your email. Use it to update your password.', 'success')
+#         flash('The password link will expire in 10 mins', 'warning')
+#         if session['isAdmin']:
+#             return redirect('/adminProfile/' + str(username))
+#         else:
+#             return redirect('/profile/' + str(username))
+#
 #
 # @app.route('/reset/<url>', methods=["GET", "POST"])
 # def resetPassword(url):
@@ -999,10 +1128,11 @@ def changePassword(username):
 #             user_to_url.pop(url)
 #             flash("Password has been successfully reset", 'success')
 #             return redirect("/login")
-#         return render_template("changePassword.html", changePasswordForm=changePasswordForm)
+#         return render_template("forgetpassword.html", changePasswordForm=changePasswordForm)
 
 
 @app.route('/topics')
+@custom_login_required
 def topics():
     sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
@@ -1012,6 +1142,7 @@ def topics():
 
 
 @app.route('/indivTopic/<topicID>', methods=["GET", "POST"])
+@custom_login_required
 def indivTopic(topicID):
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
@@ -1032,6 +1163,7 @@ def indivTopic(topicID):
 
 
 @app.route('/adminProfile/<username>', methods=["GET", "POST"])
+@custom_login_required
 def adminUserProfile(username):
     updateEmailForm = Forms.UpdateEmail(request.form)
     updateUsernameForm = Forms.UpdateUsername(request.form)
@@ -1258,6 +1390,7 @@ def adminIndivTopic(topicID):
 
 
 @app.route('/addTopic', methods=["GET", "POST"])
+@custom_login_required
 def addTopic():
     if not session['login']:
         return redirect('/login')
@@ -1292,6 +1425,7 @@ def addTopic():
 
 
 @app.route('/adminUsers')
+@custom_login_required
 def adminUsers():
     sql = "SELECT Username From user"
     tupleCursor.execute(sql)
@@ -1300,6 +1434,7 @@ def adminUsers():
 
 
 @app.route('/adminDeleteUser/<username>', methods=['POST'])
+@custom_login_required
 def deleteUser(username):
     user_email = "SELECT Email FROM user WHERE user.username=%s"
     val = (username,)
@@ -1324,6 +1459,7 @@ def deleteUser(username):
 
 
 @app.route('/adminDeletePost/<postID>', methods=['POST', 'GET'])
+@custom_login_required
 def deletePost(postID):
     sql = "SELECT post.Content, post.DatetimePosted, post.postID, user.Username, user.email "
     sql += "FROM post"
@@ -1342,6 +1478,7 @@ def deletePost(postID):
 
 
 @app.route('/adminFeedback')
+@custom_login_required
 def adminFeedback():
     sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
     sql += "FROM feedback"
@@ -1353,6 +1490,7 @@ def adminFeedback():
 
 
 @app.route('/replyFeedback/<feedbackID>', methods=["GET", "POST"])
+@custom_login_required
 def replyFeedback(feedbackID):
     sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
     sql += "FROM feedback"
@@ -1397,7 +1535,7 @@ def replyFeedback(feedbackID):
 def make_session_permanent():
     session_modified = True
     session_permanent = True
-    app.permanent_session_lifetime = timedelta(seconds=3000)
+    app.permanent_session_lifetime = timedelta(seconds=500)
     # flash('Session timeout, please re-login.', 'warning')     # flashing too many times
 
 
