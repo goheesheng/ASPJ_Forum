@@ -103,11 +103,23 @@
                     </span>
 
                     <span class="post-votes ml-auto float-right" id="post-votes-{{ post.PostID }}">
+                        {% if session['isLogin'] %}
                 <a id="upvote{{loop.index-1}}" data-vote="1" data-post="{{ post.PostID }}" class="upvote"><i
                         class="fa fa-arrow-up {% if post.UserVote==1 %}active{% endif %}"></i></a>
+                        {% else %}
+                            <a class="invalid"><i
+                        class="fa fa-arrow-up {% if post.UserVote==1 %}active{% endif %}"></i></a>
+                        {% endif %}
                 <span id="postTotalVotes{{post.PostID}}">{{ post.TotalVotes }}</span>
+                        {% if session['isLogin'] %}
                 <a data-vote="-1" id="downvote{{loop.index-1}}" data-post="{{ post.PostID }}" class='downvote'><i
                         class="fa fa-arrow-down {% if post.UserVote==-1 %}active{% endif %}"></i></a>
+                        {% else %}
+                             <a class='invalid'><i
+                        class="fa fa-arrow-down {% if post.UserVote==-1 %}active{% endif %}"></i></a>
+                        {% endif %}
+
+
                 </span> <!--Votes-->
             </div> <!--Post-->
             {% endfor %}

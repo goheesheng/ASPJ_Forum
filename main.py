@@ -1,19 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, \
     send_from_directory, session, get_flashed_messages, abort
 from flask_talisman import Talisman
+from functools import wraps
 import mysql.connector, re, random
 import Forms
 from datetime import datetime, timedelta  # for session timeout
-# Flask mail
 import os
 import base64
 import secrets  # for the otp token
 from flask_mail import Mail, Message
 import sys
-import asyncio
-from threading import Thread
 import DatabaseManager
-from flask_login import LoginManager, login_required, login_user, logout_user, current_user, UserMixin
+
 
 # Do set this
 # os.environ['DB_USERNAME'] = 'ASPJuser'
@@ -56,18 +54,6 @@ csp = {
 
 }
 talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src'])
-# # define flask-login configuration
-# login_mgr = LoginManager()
-# login_mgr.init_app(app)     # app is a flask object
-# login_mgr.login_view = 'login'
-# login_mgr.refresh_view = 'relogin'
-# # login_mgr.needs_refresh_message = (u"Session timeout, please re-login")
-# # login_mgr.needs_refresh_message_category = "info"
-
-app.config.from_object(__name__)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = '.login'
 
 # Do set this, go discord and follow instructions
 # os.environ['MAIL_USERNAME'] = 'appdevescip2003@gmail.com'
@@ -75,6 +61,8 @@ login_manager.login_view = '.login'
 #
 # print(os.environ['MAIL_USERNAME'])
 # print(os.environ['MAIL_PASSWORD'])
+
+
 
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
@@ -100,20 +88,15 @@ mail = Mail(app)
 # #     print("entered")
 # # flash('Session timeout, please re-login.','warning')
 
+def custom_login_required(f):
+    @wraps(f)
+    def wrap(*args,**kwargs):
+        if 'login' not in session or session['login']!=True:
+            flash("Please log in to access this page")
+            return redirect(url_for('login'))
+        return f(*args,**kwargs)
+    return wrap
 
-@login_manager.user_loader
-def load_user(UserID):
-    # sql = "SELECT UserID from user"
-    # val = (UserID,)
-    # dictCursor.excute(sql, val)
-    # userData = dictCursor.fetchone()
-
-    return User(UserID)  # fetch from the database
-
-
-class User(UserMixin):
-    def __init__(self, id):
-        self.id = id
 
 
 # brute force attack prevention on password field
@@ -134,7 +117,6 @@ class Tries:
 
 tries = Tries(0)
 
-
 def get_all_topics(option):
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
     dictCursor.execute(sql)
@@ -147,15 +129,15 @@ def get_all_topics(option):
         topicTuples.insert(0, ('0', 'All Topics'))
     return topicTuples
 
+@app.route('/temp', methods=["POST"])
+def temp():
+    flash('Please login to upvote or downvote',"warning")
+    return make_response(jsonify(url_for('login')),200)
 
+@custom_login_required
 @app.route('/postVote', methods=["GET", "POST"])
 def postVote():
-    if not session['login']:
-        flash('You must be logged in to vote.', 'warning')
-        return make_response(jsonify({'message': 'Please log in to vote.'}), 401)
-
     data = request.get_json(force=True)
-    print(data)
     currentVote = DatabaseManager.get_user_post_vote(str(session.get('userID')), data['postID'])
 
     if currentVote == None:
@@ -212,12 +194,9 @@ def postVote():
                                      , 'newVote': newVote, 'updatedVoteTotal': updatedVoteTotal,
                                   'postID': data['postID']}), 200)
 
-
+@custom_login_required
 @app.route('/commentVote', methods=["GET", "POST"])
 def commentVote():
-    if not session['login']:
-        flash('You must be logged in to vote.', 'warning')
-        return make_response(jsonify({'message': 'Please log in to vote.'}), 401)
 
     data = request.get_json(force=True)
     print(data)
@@ -277,16 +256,9 @@ def commentVote():
                                      , 'newVote': newVote, 'updatedCommentTotal': updatedCommentTotal,
                                   'commentID': data['commentID']}), 200)
 
-
 @app.route('/')
 def main():
-    # to check if the user exist or not
-    # if not session.get("userID"):
-    # if not there in the session then redirect to login page
-    # return redirect("/home")
-    # return render_template('home.html')
     return redirect("/home")
-
 
 # # for flask session timeout
 # @app.route('/hello')
@@ -305,9 +277,9 @@ def main():
 
 @app.route('/home', methods=["GET", "POST"])
 def home():
-    print(session)
     searchBarForm = Forms.SearchBarForm(request.form)
     searchBarForm.topic.choices = get_all_topics('all')
+
     if request.method=="GET":
         session['csrf_token']= base64.b64encode(os.urandom(16))
 
@@ -341,9 +313,11 @@ def home():
             post['UserVote'] = 0
         post['TotalVotes'] = post['Upvotes'] - post['Downvotes']
         post['Content'] = post['Content'][:200]
-    return render_template('home.html', currentPage='home', **session, searchBarForm=searchBarForm,
-                           recentPosts=recentPosts)
+    print(session)
+    print(get_all_topics('all'))
 
+
+    return render_template('home.html', currentPage='home', **session, searchBarForm=searchBarForm,recentPosts=recentPosts)
 
 @app.route('/searchPosts', methods=["GET", "POST"])
 def searchPosts():
@@ -397,7 +371,7 @@ def searchPosts():
     return render_template('searchPost.html', currentPage='search', **session, searchBarForm=searchBarForm,
                            postList=relatedPosts)
 
-
+@custom_login_required
 @app.route('/viewPost/<int:postID>/', methods=["GET", "POST"])
 def viewPost(postID):
     print('i')
@@ -476,7 +450,7 @@ def viewPost(postID):
     return render_template('viewPost.html', currentPage='viewPost', **session, commentForm=commentForm,
                            replyForm=replyForm, post=post, commentList=commentList)
 
-
+@custom_login_required
 @app.route('/addPost', methods=["GET", "POST"])
 def addPost():
     sql = "SELECT TopicID, Content FROM topic ORDER BY Content"
@@ -507,7 +481,7 @@ def addPost():
 
     return render_template('addPost.html', currentPage='addPost', **session, postForm=postForm)
 
-
+@custom_login_required
 @app.route('/feedback', methods=["GET", "POST"])
 def feedback():
     feedbackForm = Forms.FeedbackForm(request.form)
@@ -540,7 +514,7 @@ def login():
     # app.permanent_session_lifetime = timedelta(minutes=1)
     # if form is submitted
     loginForm = Forms.LoginForm(request.form)
-
+    print(get_flashed_messages())
     if request.method=="GET":
         session['csrf_token']= base64.b64encode(os.urandom(16))
 
@@ -568,8 +542,6 @@ def login():
             else:
                 tries.reset_tries()
                 # flask session timeout
-                user = User(findUser['UserID'])
-                login_user(user)
 
                 session['login'] = True
                 session['userID'] = int(findUser['UserID'])
@@ -594,15 +566,15 @@ def login():
             render_template("login.html", loginForm=loginForm, tries=tries)
     return render_template("login.html", loginForm=loginForm, tries=tries)
 
-
+@custom_login_required
 @app.route('/logout')
-@login_required  # flask session timeout
+# flask session timeout
 def logout():
-    logout_user()
     # timed_out = request.args.get('timeout')
     # if request.args.get('timeout'):
     #     flash('Session timeout, please re-login.', 'warning')
     session["name"] = None
+    session['isAdmin']=False
     session['login'] = False
     session['userID'] = 0
     session['username'] = ''
@@ -768,8 +740,8 @@ def signUp():
 
     return render_template('signup.html', currentPage='signUp', **session, signUpForm=signUpForm)
 
-
 @app.route('/profile/<username>', methods=["GET", "POST"])
+@custom_login_required
 def profile(username):
     updateEmailForm = Forms.UpdateEmail(request.form)
     updateUsernameForm = Forms.UpdateUsername(request.form)
@@ -1140,6 +1112,7 @@ def resetpass():
 
 
 @app.route('/topics')
+@custom_login_required
 def topics():
     sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
@@ -1149,6 +1122,7 @@ def topics():
 
 
 @app.route('/indivTopic/<topicID>', methods=["GET", "POST"])
+@custom_login_required
 def indivTopic(topicID):
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
@@ -1169,6 +1143,7 @@ def indivTopic(topicID):
 
 
 @app.route('/adminProfile/<username>', methods=["GET", "POST"])
+@custom_login_required
 def adminUserProfile(username):
     updateEmailForm = Forms.UpdateEmail(request.form)
     updateUsernameForm = Forms.UpdateUsername(request.form)
@@ -1270,6 +1245,7 @@ def adminUserProfile(username):
 
 
 @app.route('/adminHome', methods=["GET", "POST"])
+@custom_login_required
 def adminHome():
     searchBarForm = Forms.SearchBarForm(request.form)
     searchBarForm.topic.choices = get_all_topics('all')
@@ -1299,6 +1275,7 @@ def adminHome():
 
 
 @app.route('/adminViewPost/<int:postID>/', methods=["GET", "POST"])
+@custom_login_required
 def adminViewPost(postID):
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted,post.TopicID,post.PostID, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
@@ -1366,6 +1343,7 @@ def adminViewPost(postID):
 
 
 @app.route('/adminTopics')
+@custom_login_required
 def adminTopics():
     sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
@@ -1374,6 +1352,7 @@ def adminTopics():
 
 
 @app.route('/adminIndivTopic/<topicID>', methods=["GET", "POST"])
+@custom_login_required
 def adminIndivTopic(topicID):
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
@@ -1395,6 +1374,7 @@ def adminIndivTopic(topicID):
 
 
 @app.route('/addTopic', methods=["GET", "POST"])
+@custom_login_required
 def addTopic():
     if not session['login']:
         return redirect('/login')
@@ -1429,6 +1409,7 @@ def addTopic():
 
 
 @app.route('/adminUsers')
+@custom_login_required
 def adminUsers():
     sql = "SELECT Username From user"
     tupleCursor.execute(sql)
@@ -1437,6 +1418,7 @@ def adminUsers():
 
 
 @app.route('/adminDeleteUser/<username>', methods=['POST'])
+@custom_login_required
 def deleteUser(username):
     user_email = "SELECT Email FROM user WHERE user.username=%s"
     val = (username,)
@@ -1461,6 +1443,7 @@ def deleteUser(username):
 
 
 @app.route('/adminDeletePost/<postID>', methods=['POST', 'GET'])
+@custom_login_required
 def deletePost(postID):
     sql = "SELECT post.Content, post.DatetimePosted, post.postID, user.Username, user.email "
     sql += "FROM post"
@@ -1479,6 +1462,7 @@ def deletePost(postID):
 
 
 @app.route('/adminFeedback')
+@custom_login_required
 def adminFeedback():
     sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
     sql += "FROM feedback"
@@ -1490,6 +1474,7 @@ def adminFeedback():
 
 
 @app.route('/replyFeedback/<feedbackID>', methods=["GET", "POST"])
+@custom_login_required
 def replyFeedback(feedbackID):
     sql = "SELECT feedback.Content, feedback.DatetimePosted, feedback.Reason,feedback.FeedbackID, user.Username, user.Email "
     sql += "FROM feedback"
@@ -1534,7 +1519,7 @@ def replyFeedback(feedbackID):
 def make_session_permanent():
     session_modified = True
     session_permanent = True
-    app.permanent_session_lifetime = timedelta(seconds=3000)
+    app.permanent_session_lifetime = timedelta(seconds=500)
     # flash('Session timeout, please re-login.', 'warning')     # flashing too many times
 
 

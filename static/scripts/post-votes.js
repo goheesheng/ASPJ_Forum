@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
+  var invalidbuttons=document.querySelectorAll('.invalid');
+  if(invalidbuttons.length>0){
+  for(let i=0;i<invalidbuttons.length;i++){
+   document.querySelectorAll('.invalid')[i].addEventListener('click',callLogin);
+   }
+  }
   var upvoteButtonsALL=document.querySelectorAll('.upvote');
   for(let i=0;i<upvoteButtonsALL.length;i++){
    document.querySelectorAll('.upvote')[i].addEventListener('click',postVote);
@@ -24,6 +30,13 @@ document.addEventListener('DOMContentLoaded', function () {
    }
 }
 );
+
+function callLogin(){
+    fetch('/temp',{headers: new Headers({"content-type":"application/json"}),method:'Post'});
+    alert('Please login to upvote/downvote')
+    window.location.replace("http://127.0.0.1:5000/login");
+
+}
 
 function commentVote() {
   button=this
