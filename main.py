@@ -755,6 +755,7 @@ def profile(username):
     updateEmailForm = Forms.UpdateEmail(request.form)
     updateUsernameForm = Forms.UpdateUsername(request.form)
     updateStatusForm = Forms.UpdateStatus(request.form)
+    updatePasswordForm = Forms.UpdatePassword(request.form)
     if request.method=="GET":
         session['csrf_token']= base64.b64encode(os.urandom(16))
     if request.method == "POST" and updateUsernameForm.validate():
@@ -881,6 +882,26 @@ def profile(username):
 
             return redirect('/profile/' + session['username'])
 
+    # updating password in profile
+    # if request.method == "POST" and updatePasswordForm.validate():
+    #     print('updatepasswordform')
+    #     sql = "UPDATE user "
+    #     sql += "SET Password=%s"
+    #     sql += "WHERE UserID=%s"
+    #     try:
+    #         val = (updatePasswordForm.status.data, str(session["userID"]))
+    #         tupleCursor.execute(sql, val)
+    #
+    #         db.commit()
+    #
+    #     except mysql.connector.errors.IntegrityError as errorMsg:
+    #         errorMsg = str(errorMsg)
+    #         flash("An unexpected error has occurred!", "warning")
+    #     else:
+    #         flash('Account successfully updated!', 'success')
+    #
+    #         return redirect('/profile/' + session['username'])
+
     return render_template("profile.html", currentPage="myProfile", **session, userData=userData,
                            recentPosts=recentPosts,
                            updateEmailForm=updateEmailForm, updateUsernameForm=updateUsernameForm,
@@ -897,6 +918,7 @@ def otp2(link):
     if request.method == "POST" and otpform.validate():
         print(otpform.csrf_token.data)
         print(type(otpform.csrf_token.data))
+        print(session['csrf_token'])
         if otpform.csrf_token.data != str((session['csrf_token'])):
             return redirect(url_for('login'))
 
@@ -916,7 +938,7 @@ def otp2(link):
             sql = "DELETE from otp where link =%s"
             val = (link,)
             tupleCursor.execute(sql, val)
-            temp_resetpass.get(link)
+            temp_resetpass.pop(link)
             db.commit()
             return redirect('/forgetPassword')
         print(otp, 'test')
@@ -924,8 +946,11 @@ def otp2(link):
         print(otp[1], otp[0], otp, 'otp')
         if str(otp[0]) == otpform.otp.data:
             try:
-                sql = "UPDATE user SET password=%s WHERE username=%s"
-                val = (temp_details["Username"], temp_details["Password"])
+                # sql = "UPDATE user SET Password =%s WHERE Username =%s"
+                sql = "UPDATE user "
+                sql += "SET Password=%s"
+                sql += "WHERE Username=%s"
+                val = (temp_details["Password"], temp_details["Username"])
                 tupleCursor.execute(sql, val)
                 db.commit()
 
@@ -942,7 +967,7 @@ def otp2(link):
                 temp_resetpass.pop(link)
                 sql = "DELETE from otp WHERE link =%s"
                 val = (link,)
-                tupleCursor.execute.sql(sql, val)
+                tupleCursor.execute(sql, val)
                 db.commit()
                 sql = "SELECT UserID, Username FROM user WHERE Username=%s AND Password=%s"
                 val = (temp_details['Username'], temp_details["Password"])
@@ -955,29 +980,29 @@ def otp2(link):
                 flash('Account password changed successfully! You are now logged in as %s.' % (session['username']), 'success')
                 return redirect('/home')
 
-        # elif temp_details[
-        #     "Resend count"] <3:
-        #     print('resend')
-        #     temp_details["Resend count"] += 1
-        #     OTP = random.randint(100000, 999999)
-        #     sql = "UPDATE otp SET otp =%s WHERE link =%s"
-        #     val = (OTP, link)
-        #     tupleCursor.execute(sql, val)
-        #     db.commit()
-        #     try:
-        #         msg = Message("ASPJ Forget Password",
-        #                       sender = os.environ["MAIL_USERNAME"],
-        #                       recipients = [temp_details['Email']])
-        #         msg.body = "OTP for Forget Password"
-        #         msg.html = render_template('otp_email.html', OTP=OTP, username=temp_details["Username"])
-        #         mail.send(msg)
-        #     except Exception as e:
-        #         print(e)
-        #         print("Error:", sys.exc_info()[0])
-        #         print("goes into except")
-        #     else:
-        #         flash("Wrong OTP, please try again!", "warning")
-        #         return redirect("/forgetPasslogin/" + link)
+        elif temp_details[
+            "Resend count"] <3:
+            print('resend')
+            temp_details["Resend count"] += 1
+            OTP = random.randint(100000, 999999)
+            sql = "UPDATE otp SET otp =%s WHERE link =%s"
+            val = (OTP, link)
+            tupleCursor.execute(sql, val)
+            db.commit()
+            try:
+                msg = Message("ASPJ Forget Password",
+                              sender = os.environ["MAIL_USERNAME"],
+                              recipients = [temp_details['Email']])
+                msg.body = "OTP for Forget Password"
+                msg.html = render_template('otp_email.html', OTP=OTP, username=temp_details["Username"])
+                mail.send(msg)
+            except Exception as e:
+                print(e)
+                print("Error:", sys.exc_info()[0])
+                print("goes into except")
+            else:
+                flash("Wrong OTP, please try again!", "warning")
+                return redirect("/forgetPasslogin/" + link)
 
         else:
             flash("You have failed OTP too many times. Please recheck your details before submitting the form!", 'danger')
@@ -1007,11 +1032,11 @@ def resetpass():
         temp_details["Email"] = forgetPasswordForm.email.data
         temp_details["Username"] = forgetPasswordForm.username.data
         temp_details["Password"] = forgetPasswordForm.password.data
-        temp_details["ConfirmPassword"] = forgetPasswordForm.confirmPassword.data
+        # temp_details["ConfirmPassword"] = forgetPasswordForm.confirmPassword.data
         temp_details["Resend count"] = 0
         OTP = random.randint(100000, 999999)
         link = secrets.token_urlsafe()
-        temp_signup[link] = temp_details
+        temp_resetpass[link] = temp_details
         sql = "INSERT INTO otp (link, otp) VALUES (%s, %s)"
         val = (link, str(OTP))
         tupleCursor.execute(sql, val)
