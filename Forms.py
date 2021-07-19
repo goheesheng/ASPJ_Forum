@@ -21,7 +21,7 @@ class FeedbackForm(baseform):
     comment = TextAreaField('Comment', [validators.DataRequired()], render_kw={"rows": 10, "placeholder": "Enter comment here..."})
 
 class LoginForm(baseform):
-    username = StringField('Username', [validators.DataRequired()])
+    username = StringField('Username', [validators.DataRequired(),validators.Regexp(re.compile('^([a-zA-Z0-9]+)([a-zA-Z0-9]{2,5})$'))]) #,message= "Username can contain only alphanumeric characters!")])
     password = PasswordField('Password', [validators.DataRequired()])
 
 class SignUpForm(baseform):
@@ -86,4 +86,5 @@ class OTPForm(baseform):
 
 class enterUsernameForm(Form):
     # for forget password
-    enterUsername = StringField('Username', [validators.DataRequired()])
+    username = StringField('Username', [validators.DataRequired(),validators.Regexp(re.compile('^([a-zA-Z0-9]+)([a-zA-Z0-9]{2,5})$'),message= "Username can contain only alphanumeric characters!")])
+
