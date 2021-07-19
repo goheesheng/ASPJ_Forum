@@ -7,197 +7,212 @@
 {% endblock %}
 
 {% block content %}
-{% from "includes/_formhelper.html" import render_field %}
+{% from "includes/_formhelper.html" import render_field,render_field_no_label %}
 <div class="col-md-12">
-  {{ flash() }}
+    {{ flash() }}
 </div>
 <div class="container my-4">
-  <div class="col-md-5 profilebg mx-auto">
-    <p class="profile-title my-3 text-center">{{userData['Username']}}'s Profile</p>
-    <hr class="mx-auto mb-3">
-    <div class="profile-field">
-      <div class="col-md-6">
-        <i class="fa fa-child mr-3" aria-hidden="true" style="font-size:24px"></i>
-      <span class="field-title">Status:</span>
-      </div>
-      <div class="col-md-6">
-        <p class="value">{{userData['Status']}}</p>
-      </div>
+    <div class="col-md-5 profilebg mx-auto">
+        <p class="profile-title my-3 text-center">{{userData['Username']}}'s Profile</p>
+        <hr class="mx-auto mb-3">
+        <div class="profile-field">
+            <div class="col-md-6">
+                <i class="fa fa-child mr-3" aria-hidden="true" style="font-size:24px"></i>
+                <span class="field-title">Status:</span>
+            </div>
+            <div class="col-md-6">
+                <p class="value">{{userData['Status']}}</p>
+            </div>
+        </div>
+        <div class="profile-field">
+            <div class="col-md-6">
+                <i class="fa fa-star-o mr-3" aria-hidden="true" style="font-size:24px"></i>
+                <span class="field-title">Credibility:</span>
+            </div>
+            <div class="col-md-6">
+                <p class="value">{{userData['Credibility']}}</p>
+            </div>
+        </div>
+        {% if username == userData['Username'] %}
+        <div class="text-center">
+            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#UpdateModal">Edit Profile
+            </button>
+        </div>
     </div>
-    <div class="profile-field">
-      <div class="col-md-6">
-        <i class="fa fa-star-o mr-3" aria-hidden="true" style="font-size:24px"></i>
-      <span class="field-title">Credibility:</span>
-      </div>
-      <div class="col-md-6">
-        <p class="value">{{userData['Credibility']}}</p>
-      </div>
-    </div>
-    {% if username == userData['Username'] %}
+    {% if recentPosts == [] %}
+    <p class="profile-title text-center my-5">You have not posted anything</p>
     <div class="text-center">
-      <button type="button" class="btn btn-success" data-toggle="modal" data-target="#UpdateModal">Edit Profile</button>
+        <a href="/addPost/{{sessionID}}" class="btn btn-danger">Add Post</a>
     </div>
-  </div>
-  {% if recentPosts == [] %}
-  <p class="profile-title text-center my-5">You have not posted anything</p>
-  <div class="text-center">
-    <a href="/addPost/{{sessionID}}" class="btn btn-danger">Add Post</a>
-  </div>
-  {% else %}
-  <p class="profile-title text-center my-3">Your Posts</p>
+    {% else %}
+    <p class="profile-title text-center my-3">Your Posts</p>
     <div class="col-md-10 mx-auto">
-      {% for post in recentPosts %}
+        {% for post in recentPosts %}
         <div class="post-preview">
-          <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
-            <h1 class="post-title">
-              {{ post.Title }}
-            </h1>
-            <h2 class="post-subtitle">
-              {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
-            </h2>
-          </a>
-          <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="#">{{ post.Topic }}</a></span>
+            <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
+                <h1 class="post-title">
+                    {{ post.Title }}
+                </h1>
+                <h2 class="post-subtitle">
+                    {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
+                </h2>
+            </a>
+            <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a
+                    href="#">{{ post.Topic }}</a></span>
 
-          <span class="post-votes ml-auto float-right">
+            <span class="post-votes ml-auto float-right">
             <a href="#"><i class="fa fa-arrow-up"></i></a>
             <span id="postTotalVotes">{{ post.TotalVotes }}</span>
             <a href="#"><i class="fa fa-arrow-down"></i></a>
           </span>
         </div>
-      {% endfor %}
+        {% endfor %}
     </div>
     {% endif %}
     {% else %}
-  </div>
-  {% if recentPosts == [] %}
-    <p class="profile-title text-center my-5">{{userData['Username']}} has not posted anything</p>
-  {% else %}
-    <p class="profile-title text-center my-3">{{userData['Username']}}'s Posts</p>
-      <div class="col-md-10 mx-auto">
-        {% for post in recentPosts %}
-          <div class="post-preview">
-            <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
-              <h1 class="post-title">
+</div>
+{% if recentPosts == [] %}
+<p class="profile-title text-center my-5">{{userData['Username']}} has not posted anything</p>
+{% else %}
+<p class="profile-title text-center my-3">{{userData['Username']}}'s Posts</p>
+<div class="col-md-10 mx-auto">
+    {% for post in recentPosts %}
+    <div class="post-preview">
+        <a href="/viewPost/{{ post.PostID }}/{{sessionID}}">
+            <h1 class="post-title">
                 {{ post.Title }}
-              </h1>
-              <h2 class="post-subtitle">
+            </h1>
+            <h2 class="post-subtitle">
                 {{ post.Content }} <span style="color: #6a6a6a; font-size: 14px;">... See More</span>
-              </h2>
-            </a>
-            <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a href="#">{{ post.Topic }}</a></span>
+            </h2>
+        </a>
+        <span class="post-meta">Posted by <a href="#">{{ post.Username }}</a> on {{ post.DatetimePosted }} | <a
+                href="#">{{ post.Topic }}</a></span>
 
-            <span class="post-votes ml-auto float-right">
+        <span class="post-votes ml-auto float-right">
               <a href="#"><i class="fa fa-arrow-up"></i></a>
               <span id="postTotalVotes">{{ post.TotalVotes }}</span>
               <a href="#"><i class="fa fa-arrow-down"></i></a>
             </span>
-          </div>
-        {% endfor %}
-      </div>
-    {% endif %}
-    {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endif %}
 </div>
 <div id="UpdateModal" class="modal fade" role="dialog">
-  <div class="modal-dialog">
+    <div class="modal-dialog">
 
-    <!-- Modal content-->
-    <div class="modal-content">
-      <div class="modal-header">
-        <h4 class="modal-title">Update</h4>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-      </div>
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Update</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
 
-      <div class="modal-body">
-        <form method="POST" class="mt-4">
-          <button type="button" class="btn btn-warning w-100 mb-3" style="color:darkgreen;" data-toggle="modal" data-target="#UpdateEmailModal">Update Email</button>
-          <button type="button" class="btn btn-warning w-100 my-3" style="color:darkmagenta;" data-toggle="modal" data-target="#UpdateUsernameModal">Update Username</button>
-          <button type="button" class="btn btn-warning w-100 my-3" style="color:darkred;" data-toggle="modal" data-target="#UpdateStatusModal">Update Status</button>
-          <a class="btn btn-danger w-100 my-3" href="/changePassword/{{userData['Username']}}">Change Password</a>
-      </div>
+            <div class="modal-body">
+                <form method="POST" class="mt-4">
+                    <button type="button" class="btn btn-warning w-100 mb-3" style="color:darkgreen;"
+                            data-toggle="modal" data-target="#UpdateEmailModal">Update Email
+                    </button>
+                    <button type="button" class="btn btn-warning w-100 my-3" style="color:darkmagenta;"
+                            data-toggle="modal" data-target="#UpdateUsernameModal">Update Username
+                    </button>
+                    <button type="button" class="btn btn-warning w-100 my-3" style="color:darkred;" data-toggle="modal"
+                            data-target="#UpdateStatusModal">Update Status
+                    </button>
+                    <a class="btn btn-danger w-100 my-3" href="/changePassword/{{userData['Username']}}">Change
+                        Password</a>
+            </div>
 
-      <div class="modal-footer">
-        <div class="form-group">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <div class="modal-footer">
+                <div class="form-group">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+
         </div>
-      </div>
-
     </div>
-  </div>
 </div>
 <div id="UpdateEmailModal" class="modal fade" role="dialog">
-  <div class="modal-dialog">
+    <div class="modal-dialog">
 
-    <!-- Modal content-->
-    <div class="modal-content">
-      <div class="modal-header">
-        <h4 class="modal-title">Update</h4>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form method="POST" class="mt-4">
-          <div class="form-group">
-            {{render_field(updateEmailForm.email, class= "form-control", value=userData['Email'])}}
-          </div>
-      </div>
-      <div class="modal-footer">
-        <div class="form-group">
-          <input type="submit" class="btn btn-success">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Update</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" class="mt-4">
+                    <div class="form-group">
+                        {{render_field(updateEmailForm.email, class= "form-control", value=userData['Email'])}}
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <div class="form-group">
+                    <input type="submit" class="btn btn-success">
+                </div>
+            </div>
+            </form>
         </div>
-      </div>
-      </form>
-    </div>
 
-  </div>
+    </div>
 </div>
 <div id="UpdateUsernameModal" class="modal fade" role="dialog">
-  <div class="modal-dialog">
+    <div class="modal-dialog">
 
-    <!-- Modal content-->
-    <div class="modal-content">
-      <div class="modal-header">
-        <h4 class="modal-title">Update</h4>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form method="POST" class="mt-4">
-          <div class="form-group">
-            {{render_field(updateUsernameForm.username, class= "form-control", value=userData['Username'])}}
-          </div>
-      </div>
-      <div class="modal-footer">
-        <div class="form-group">
-          <input type="submit" class="btn btn-success">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Update</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" class="mt-4">
+                    <div class="form-group">
+                        {{render_field(updateUsernameForm.username, class= "form-control", value=userData['Username'])}}
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <div class="form-group">
+                    <input type="submit" class="btn btn-success">
+                </div>
+            </div>
+            </form>
         </div>
-      </div>
-      </form>
-    </div>
 
-  </div>
+    </div>
 </div>
 <div id="UpdateStatusModal" class="modal fade" role="dialog">
-  <div class="modal-dialog">
+    <div class="modal-dialog">
 
-    <!-- Modal content-->
-    <div class="modal-content">
-      <div class="modal-header">
-        <h4 class="modal-title">Update</h4>
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form method="POST" class="mt-4">
-          <div class="form-group">
-            {{render_field(updateStatusForm.status, class= "form-control", value=userData['Status'])}}
-          </div>
-      </div>
-      <div class="modal-footer">
-        <div class="form-group">
-          <input type="submit" class="btn btn-success">
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Update</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" class="mt-4">
+                    <div class="form-group">
+                        {{
+                        render_field_no_label(updateUsernameForm.csrf_token,value=session['csrf_token'],class='form-control.d-none')
+                        }}
+                    </div>
+                    <div class="form-group">
+                        {{render_field(updateStatusForm.status, class= "form-control", value=userData['Status'])}}
+                    </div>
+            </div>
+            <div class="modal-footer">
+                <div class="form-group">
+                    <input type="submit" class="btn btn-success">
+                </div>
+            </div>
+            </form>
         </div>
-      </div>
-      </form>
-    </div>
 
-  </div>
+    </div>
 </div>
 
 {% endblock %}
