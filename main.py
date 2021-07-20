@@ -300,8 +300,8 @@ def home():
     if request.method == "POST" and searchBarForm.validate():
         print(searchBarForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(searchBarForm.csrf_token.data))
-        print(session['csrf_token'])
-        if searchBarForm.csrf_token.data!=str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if searchBarForm.csrf_token.data!=str(session.get('csrf_token')):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and searchBarForm.validate():
@@ -346,8 +346,8 @@ def searchPosts():
     if request.method == "POST" and searchBarForm.validate():
         print(searchBarForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(searchBarForm.csrf_token.data))
-        print(session['csrf_token'])
-        if searchBarForm.csrf_token.data!=str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if searchBarForm.csrf_token.data!=str(session.get('csrf_token')):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and searchBarForm.validate():
@@ -438,8 +438,8 @@ def viewPost(postID):
     if request.method == "POST" and commentForm.validate():
         print(commentForm.csrf_token.data)  # technically we translate the bytes to literally string
         print(type(commentForm.csrf_token.data))
-        print(session['csrf_token'])
-        if commentForm.csrf_token.data != str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if commentForm.csrf_token.data != (session.get('csrf_token')):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and commentForm.validate():
@@ -480,8 +480,8 @@ def addPost():
     if request.method == "POST" and postForm.validate():
         print(postForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(postForm.csrf_token.data))
-        print(session['csrf_token'])
-        if postForm.csrf_token.data!=str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if postForm.csrf_token.data!=str(session.get('csrf_token')):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and postForm.validate():
@@ -506,8 +506,8 @@ def feedback():
     if request.method == "POST" and feedbackForm.validate():
         print(feedbackForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(feedbackForm.csrf_token.data))
-        print(session['csrf_token'])
-        if feedbackForm.csrf_token.data!=str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if feedbackForm.csrf_token.data!=str(session.get('csrf_token')):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and feedbackForm.validate():
@@ -535,8 +535,8 @@ def login():
     if request.method == "POST" and loginForm.validate():
         print(loginForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(loginForm.csrf_token.data))
-        print(session['csrf_token'])
-        if loginForm.csrf_token.data!=str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if loginForm.csrf_token.data!=str(session.get('csrf_token')):
             # print('enter')
             return redirect(url_for('login'))
         else:
@@ -609,8 +609,8 @@ def otp(link):
     if request.method == "POST" and otpform.validate():
         print(otpform.csrf_token.data) #technically we translate the bytes to literally string
         print(type(otpform.csrf_token.data))
-        print(session['csrf_token'])
-        if otpform.csrf_token.data!=str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if otpform.csrf_token.data!=str(session.get('csrf_token')):
             # print('enter')
             return redirect(url_for('login'))
     sql = "SELECT otp, TIME_TO_SEC(TIMEDIFF(%s, Time_Created)) from otp WHERE link = %s"  # set timer for opt 3 mins, time_created was created in db schema
@@ -716,8 +716,8 @@ def signUp():
     if request.method == "POST" and signUpForm.validate():
         print(signUpForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(signUpForm.csrf_token.data))
-        print(session['csrf_token'])
-        if signUpForm.csrf_token.data!=str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if signUpForm.csrf_token.data!=str(session.get('csrf_token')):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and signUpForm.validate():
@@ -766,8 +766,8 @@ def profile(username):
     if request.method == "POST" and updateUsernameForm.validate():
         print(updateUsernameForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(updateUsernameForm.csrf_token.data))
-        print(session['csrf_token'])
-        if updateUsernameForm.csrf_token.data!=str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if updateUsernameForm.csrf_token.data!=str(session.get('csrf_token')):
             # print('enter')
             return redirect(url_for('login'))
     sql = "SELECT Username, Status, Email FROM user WHERE user.Username=%s"
@@ -923,8 +923,8 @@ def otp2(link):
     if request.method == "POST" and otpform.validate():
         print(otpform.csrf_token.data)
         print(type(otpform.csrf_token.data))
-        print(session['csrf_token'])
-        if otpform.csrf_token.data != str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if otpform.csrf_token.data != str(session.get('csrf_token')):
             return redirect(url_for('login'))
 
     sql = "SELECT otp, TIME_TO_SEC(TIMEDIFF(%s, Time_Created)) from otp WHERE link = %s"
@@ -1028,8 +1028,8 @@ def resetpass():
     if request.method == "POST" and forgetPasswordForm.validate():
         print(forgetPasswordForm.csrf_token.data)
         print(type(forgetPasswordForm.data))
-        print(session['csrf_token'])
-        if forgetPasswordForm.csrf_token.data != str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if forgetPasswordForm.csrf_token.data != str(session.get('csrf_token')):
             return redirect(url_for('login'))
 
     if request.method == "POST" and forgetPasswordForm.validate():
@@ -1442,8 +1442,8 @@ def addTopic():
     if request.method == "POST" and topicForm.validate():
         print(topicForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(topicForm.csrf_token.data))
-        print(session['csrf_token'])
-        if topicForm.csrf_token.data!=str((session['csrf_token'])):
+        print(session.get('csrf_token'))
+        if topicForm.csrf_token.data!=str(session.get('csrf_token')):
             # print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and topicForm.validate():
