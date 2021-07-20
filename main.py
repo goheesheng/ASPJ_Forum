@@ -91,6 +91,12 @@ mail = Mail(app)
 def custom_login_required(f):
     @wraps(f)
     def wrap(*args,**kwargs):
+        print(session)
+        print(app.permanent_session_lifetime)
+        if 'login' not in session and 'csrf_token' not in session:
+            flash("Modification of cookie detected")
+            return redirect(url_for('login'))
+
         if 'login' not in session or session['login']!=True:
             flash("Please log in to access this page")
             return redirect(url_for('login'))
@@ -203,7 +209,6 @@ def commentVote():
         return make_response(jsonify({'message': 'Please log in to vote.'}), 401)
 
     data = request.get_json(force=True)
-    print(data)
     currentVote = DatabaseManager.get_user_comment_vote(str(session.get('userID')), data['commentID'])
 
     if currentVote == None:
@@ -575,8 +580,8 @@ def login():
             render_template("login.html", loginForm=loginForm, tries=tries)
     return render_template("login.html", loginForm=loginForm, tries=tries)
 
-@custom_login_required
 @app.route('/logout')
+@custom_login_required
 # flask session timeout
 def logout():
     # timed_out = request.args.get('timeout')
@@ -1290,6 +1295,7 @@ def adminUserProfile(username):
 
 
 @app.route('/adminHome', methods=["GET", "POST"])
+@custom_login_required
 def adminHome():
     searchBarForm = Forms.SearchBarForm(request.form)
     searchBarForm.topic.choices = get_all_topics('all')
@@ -1319,6 +1325,7 @@ def adminHome():
 
 
 @app.route('/adminViewPost/<int:postID>/', methods=["GET", "POST"])
+@custom_login_required
 def adminViewPost(postID):
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted,post.TopicID,post.PostID, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
@@ -1386,6 +1393,7 @@ def adminViewPost(postID):
 
 
 @app.route('/adminTopics')
+@custom_login_required
 def adminTopics():
     sql = "SELECT Content,TopicID FROM topic ORDER BY Content "
     tupleCursor.execute(sql)
@@ -1394,6 +1402,7 @@ def adminTopics():
 
 
 @app.route('/adminIndivTopic/<topicID>', methods=["GET", "POST"])
+@custom_login_required
 def adminIndivTopic(topicID):
     sql = "SELECT post.PostID, post.Title, post.Content, post.Upvotes, post.Downvotes, post.DatetimePosted, user.Username, topic.Content AS Topic FROM post"
     sql += " INNER JOIN user ON post.UserID=user.UserID"
@@ -1560,7 +1569,7 @@ def replyFeedback(feedbackID):
 def make_session_permanent():
     session_modified = True
     session_permanent = True
-    app.permanent_session_lifetime = timedelta(seconds=500)
+    app.permanent_session_lifetime = timedelta(seconds=5)
     # flash('Session timeout, please re-login.', 'warning')     # flashing too many times
 
 
