@@ -36,7 +36,7 @@
                   class="fa fa-arrow-down {% if post.UserVote==-1 %}active{% endif %}"></i></a>
         </span> <!--Votes-->
 
-                <form method="POST" class="mt-4 collapse" id="commentForm">
+                <form method="POST" class="mt-4 collapse" id="commentForm" enctype="multipart/form-data">
                     <div class="form-group">
                         {{
                         render_field_no_label(commentForm.csrf_token,value=session['csrf_token'],class='form-control.d-none')
@@ -46,6 +46,9 @@
                     <div class="form-group">
                         {{render_field_no_label(commentForm.comment, class= "form-control")}}
                     </div>
+                      <div class="form-group">
+                        {{render_field_no_label(commentForm.file, class= "form-control")}}
+                      </div>
 
                     <div class="form-group">
                         {{render_field_no_label(commentForm.userID,value=session['userID'], class= "form-control")}}
@@ -114,6 +117,12 @@
                        data-comment="{{ comment.CommentID }}"><i
                             class="fa fa-arrow-down {% if comment.UserVote==-1 %}active{% endif %}"></i></a>
                 </div> <!--Votes-->
+
+                <div>
+                  <img src="/static/uploads/{{comment.FileName}}">
+
+                    {{comment.FileName}}
+                </div>
 
 
                 <div class="modal fade" id="replyModal{{comment.CommentID}}" tabindex="-1" role="dialog"

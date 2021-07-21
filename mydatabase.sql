@@ -59,6 +59,7 @@ CREATE TABLE `comment` (
   `Content` mediumtext NOT NULL,
   `Upvotes` mediumint NOT NULL,
   `Downvotes` mediumint NOT NULL,
+  `FileName` varchar(50),
   PRIMARY KEY (`CommentID`),
   UNIQUE KEY `DatetimePosted_UNIQUE` (`DatetimePosted`),
   UNIQUE KEY `CommentID_UNIQUE` (`CommentID`),
@@ -75,7 +76,7 @@ CREATE TABLE `comment` (
 
 LOCK TABLES `comment` WRITE;
 /*!40000 ALTER TABLE `comment` DISABLE KEYS */;
-INSERT INTO `comment` VALUES (1,3,437954,'2020-06-22 17:59:18','I prefer using single quotes as it saves me effort from pressing the \'Shift\' button hahhaha. The only time I use double quotes is when I wish to print out single quotes. For example, print(\"I\'m using single quotes in this sentence, hence I\'ve to use double quotes to surround it.\")',0,0),(2,3,193006,'2020-06-22 18:18:29','Just use whichever you want. It doesn\'t make a difference. It does annoy me tho when working with others on the same project and everyone doesn\'t standardise the use of quotations....',0,0);
+INSERT INTO `comment` VALUES (1,3,437954,'2020-06-22 17:59:18','I prefer using single quotes as it saves me effort from pressing the \'Shift\' button hahhaha. The only time I use double quotes is when I wish to print out single quotes. For example, print(\"I\'m using single quotes in this sentence, hence I\'ve to use double quotes to surround it.\")',0,0, "test"),(2,3,193006,'2020-06-22 18:18:29','Just use whichever you want. It doesn\'t make a difference. It does annoy me tho when working with others on the same project and everyone doesn\'t standardise the use of quotations....',0,0,"Hello Wordl");
 /*!40000 ALTER TABLE `comment` ENABLE KEYS */;
 UNLOCK TABLES;
 

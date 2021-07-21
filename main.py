@@ -5,6 +5,10 @@ from functools import wraps
 import mysql.connector, re, random
 import Forms
 from datetime import datetime, timedelta  # for session timeout
+# file uploads
+from werkzeug.utils import secure_filename
+import imghdr
+
 import os
 import base64
 import secrets  # for the otp token
@@ -34,7 +38,14 @@ dictCursor = db.cursor(buffered=True, dictionary=True)
 tupleCursor.execute("SHOW TABLES")
 print(tupleCursor)
 
+basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
+
+# line 42 - 43 For file upload
+app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
+app.config['UPLOAD_EXTENSIONS'] = ['.jpg', '.png', '.gif']
+
+
 "self' means localhost, local filesystem, or anything on the same host. It doesn't mean any of those. " \
 "It means sources that have the same scheme (protocol), " \
 "same host, and same port as the file the content policy is defined in. " \
@@ -50,10 +61,11 @@ csp = {
         'http://127.0.0.1:5000/templates/login.html',
 
 
-    ]
-
+    ],
+    #'img-src': 'http://127.0.0.1:5000/templates/login.html',
+    'img-src': 'http://127.0.0.1:5000/static/uploads/',
 }
-talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src'])
+talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src','img-src'])
 
 # Do set this, go discord and follow instructions
 # os.environ['MAIL_USERNAME'] = 'appdevescip2003@gmail.com'
@@ -87,6 +99,21 @@ mail = Mail(app)
 # # if 'Session timeout, please re-login.' not in get_flashed_messages() and (request.referrer != request.base_url+"/login?next=%2Flogout" or '/static/' not in request.path):
 # #     print("entered")
 # # flash('Session timeout, please re-login.','warning')
+
+#For file upload
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def validate_image(stream):
+    header = stream.read(512)  # 512 bytes should be enough for a header check
+    stream.seek(0)  # reset stream pointer
+    format = imghdr.what(None, header)
+    if not format:
+        return None
+    return '.' + (format if format != 'jpeg' else 'jpg')
 
 def custom_login_required(f):
     @wraps(f)
@@ -726,10 +753,13 @@ def signUp():
         OTP = random.randint(100000, 999999)
         link = secrets.token_urlsafe()
         temp_signup[link] = temp_details
-        sql = "INSERT INTO otp (link, otp) VALUES (%s, %s)"
-        val = (link, str(OTP))
-        tupleCursor.execute(sql, val)
-        db.commit()
+        try:
+            sql = "INSERT INTO otp (link, otp) VALUES (%s, %s)"
+            val = (link, str(OTP))
+            tupleCursor.execute(sql, val)
+            db.commit()
+        except mysql.connector.errors.OperationalError:
+            abort(500)
         try:
             msg = Message("ASPJ Forum Signup",
                           sender=os.environ.get('MAIL_USERNAME'),
@@ -1337,7 +1367,7 @@ def adminViewPost(postID):
     else:
         post['UserVote'] = currentVote['Vote']
 
-    sql = "SELECT comment.CommentID, comment.Content, comment.DatetimePosted, comment.Upvotes, comment.Downvotes, comment.DatetimePosted, user.Username FROM comment"
+    sql = "SELECT comment.CommentID, comment.Content, comment.DatetimePosted, comment.Upvotes, comment.Downvotes, comment.DatetimePosted, user.Username, comment.FileName  FROM comment"
     sql += " INNER JOIN user ON comment.UserID=user.UserID"
     sql += " WHERE comment.PostID=%s"
     val = (postID,)
@@ -1365,9 +1395,23 @@ def adminViewPost(postID):
     replyForm.userID.data = session.get('userID')
 
     if request.method == 'POST' and commentForm.validate():
+        file = request.files['file']
+        path = os.path.abspath(os.getcwd())
+        path = os.path.join(path, 'static', 'uploads')
+
+        filename = secure_filename(file.filename)
+
+        if filename != '':
+            file_ext = os.path.splitext(filename)[1]
+            if file_ext not in app.config['UPLOAD_EXTENSIONS'] or file_ext != validate_image(file.stream):
+                abort(404)
+            else:
+                file.save(os.path.join(path, secure_filename(file.filename)))
+
+
         dateTime = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
-        sql = 'INSERT INTO comment (PostID, UserID, Content, DateTimePosted, Upvotes, Downvotes) VALUES (%s, %s, %s, %s, %s, %s)'
-        val = (postID, commentForm.userID.data, commentForm.comment.data, dateTime, 0, 0)
+        sql = 'INSERT INTO comment (PostID, UserID, Content, DateTimePosted, Upvotes, Downvotes, FileName) VALUES (%s, %s, %s, %s, %s, %s, %s)'
+        val = (postID, commentForm.userID.data, commentForm.comment.data, dateTime, 0, 0, file.filename,)
         tupleCursor.execute(sql, val)
         db.commit()
         flash('Comment posted!', 'success')
@@ -1562,7 +1606,7 @@ def replyFeedback(feedbackID):
 def make_session_permanent():
     session_modified = True
     session_permanent = True
-    app.permanent_session_lifetime = timedelta(seconds=60)
+    app.permanent_session_lifetime = timedelta(seconds=3000)
     # flash('Session timeout, please re-login.', 'warning')     # flashing too many times
 
 
@@ -1575,13 +1619,11 @@ def error404(e):
     return render_template('error.html', msg=msg, title=title)
 
 
-# @app.errorhandler(500)
-# def error500(e):
-#     msg = 'Oops! We seem to have encountered an error. Head back to the home page :)'
-#     createLog.log_error(request.path, 500, 'Internal Server Error')
-#     title = 'Error 500'
-#     admin = sessionInfo["isAdmin"]
-#     return render_template('error.html', msg=msg, admin=admin, title=title)
+@app.errorhandler(500)
+def error500(e):
+    msg = 'Oops! We seem to have encountered an error. Head back to the home page :)'
+    title = 'Error 500'
+    return render_template('error.html', msg=msg, title=title)
 
 if __name__ == "__main__":
     app.run(debug=True)
