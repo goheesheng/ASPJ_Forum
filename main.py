@@ -204,9 +204,7 @@ def postVote():
 @custom_login_required
 @app.route('/commentVote', methods=["GET", "POST"])
 def commentVote():
-    if not session['login']:
-        flash('You must be logged in to vote.', 'warning')
-        return make_response(jsonify({'message': 'Please log in to vote.'}), 401)
+    return make_response(jsonify({'message': 'Please log in to vote.'}), 401)
 
     data = request.get_json(force=True)
     currentVote = DatabaseManager.get_user_comment_vote(str(session.get('userID')), data['commentID'])
@@ -267,11 +265,6 @@ def commentVote():
 
 @app.route('/')
 def main():
-    # to check if the user exist or not
-    # if not session.get("userID"):
-    # if not there in the session then redirect to login page
-    # return redirect("/home")
-    # return render_template('home.html')
     return redirect("/home")
 
 
@@ -710,15 +703,17 @@ def signUp():
     global temp_signup
     signUpForm = Forms.SignUpForm(request.form)
     otpform = Forms.OTPForm(request.form)
+    print(session)
     if request.method=="GET":
         session['csrf_token']= base64.b64encode(os.urandom(16))
 
     if request.method == "POST" and signUpForm.validate():
         print(signUpForm.csrf_token.data) #technically we translate the bytes to literally string
         print(type(signUpForm.csrf_token.data))
-        print(session.get('csrf_token'))
+        print(session['csrf_token'])
+        print(type(session['csrf_token']))
         if signUpForm.csrf_token.data!=str(session.get('csrf_token')):
-            # print('enter')
+            print('enter')
             return redirect(url_for('login'))
     if request.method == 'POST' and signUpForm.validate():
         temp_details = {}
@@ -1426,8 +1421,6 @@ def adminIndivTopic(topicID):
 @app.route('/addTopic', methods=["GET", "POST"])
 @custom_login_required
 def addTopic():
-    if not session['login']:
-        return redirect('/login')
 
     sql = "SELECT Content FROM topic ORDER BY Content"
 
