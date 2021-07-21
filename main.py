@@ -1562,7 +1562,7 @@ def replyFeedback(feedbackID):
 def make_session_permanent():
     session_modified = True
     session_permanent = True
-    app.permanent_session_lifetime = timedelta(seconds=5)
+    app.permanent_session_lifetime = timedelta(seconds=60)
     # flash('Session timeout, please re-login.', 'warning')     # flashing too many times
 
 
