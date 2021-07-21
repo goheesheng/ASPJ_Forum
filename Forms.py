@@ -1,4 +1,4 @@
-from wtforms import validators, StringField, TextAreaField, PasswordField, SelectField, HiddenField,Form
+from wtforms import validators, StringField, TextAreaField, PasswordField, SelectField, HiddenField,Form, FileField
 from wtforms.fields import DateField
 from wtforms_components import DateRange
 from datetime import date
@@ -68,6 +68,7 @@ class PostForm(baseform):
 class CommentForm(baseform):
     userID = HiddenField()
     comment = TextAreaField('Comment', [validators.DataRequired()], render_kw={"rows": 3, "placeholder": "Enter comment here..."})
+    file = FileField("File")
 
 class ReplyForm(baseform):
     userID = HiddenField()
