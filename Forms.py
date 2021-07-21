@@ -21,7 +21,7 @@ class FeedbackForm(baseform):
     comment = TextAreaField('Comment', [validators.DataRequired()], render_kw={"rows": 10, "placeholder": "Enter comment here..."})
 
 class LoginForm(baseform):
-    username = StringField('Username', [validators.DataRequired()])
+    username = StringField('Username', [validators.DataRequired(),validators.Regexp(re.compile('^([a-zA-Z0-9]+)([a-zA-Z0-9]{2,5})$'))]) #,message= "Username can contain only alphanumeric characters!")])
     password = PasswordField('Password', [validators.DataRequired()])
 
 class SignUpForm(baseform):
@@ -30,7 +30,7 @@ class SignUpForm(baseform):
     minYear = int(year) - 13
     month, day = int(month), int(day)
     email = StringField('Email Address', [validators.DataRequired(), validators.Regexp(r'^.+@[^.].*\.[a-z]{2,10}$', message="Invalid email address.")])
-    username = StringField('Username', [validators.DataRequired()])
+    username = StringField('Username', [validators.DataRequired(),validators.Regexp(re.compile('^([a-zA-Z0-9]+)([a-zA-Z0-9]{2,5})$'),message= "Username can contain only alphanumeric characters!")])
     dob = DateField('Date of Birth', [DateRange(max=date(minYear, month, day), message="You have to be at least 13 years old to register for an account.")])
     status = StringField('Status')
     password = PasswordField('New Password', [
@@ -87,4 +87,5 @@ class OTPForm(baseform):
 
 class enterUsernameForm(Form):
     # for forget password
-    enterUsername = StringField('Username', [validators.DataRequired()])
+    username = StringField('Username', [validators.DataRequired(),validators.Regexp(re.compile('^([a-zA-Z0-9]+)([a-zA-Z0-9]{2,5})$'),message= "Username can contain only alphanumeric characters!")])
+
