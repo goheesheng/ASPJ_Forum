@@ -726,10 +726,13 @@ def signUp():
         OTP = random.randint(100000, 999999)
         link = secrets.token_urlsafe()
         temp_signup[link] = temp_details
-        sql = "INSERT INTO otp (link, otp) VALUES (%s, %s)"
-        val = (link, str(OTP))
-        tupleCursor.execute(sql, val)
-        db.commit()
+        try:
+            sql = "INSERT INTO otp (link, otp) VALUES (%s, %s)"
+            val = (link, str(OTP))
+            tupleCursor.execute(sql, val)
+            db.commit()
+        except mysql.connector.errors.OperationalError:
+            abort(500)
         try:
             msg = Message("ASPJ Forum Signup",
                           sender=os.environ.get('MAIL_USERNAME'),
@@ -1562,7 +1565,7 @@ def replyFeedback(feedbackID):
 def make_session_permanent():
     session_modified = True
     session_permanent = True
-    app.permanent_session_lifetime = timedelta(seconds=5)
+    app.permanent_session_lifetime = timedelta(seconds=3000)
     # flash('Session timeout, please re-login.', 'warning')     # flashing too many times
 
 
@@ -1575,13 +1578,11 @@ def error404(e):
     return render_template('error.html', msg=msg, title=title)
 
 
-# @app.errorhandler(500)
-# def error500(e):
-#     msg = 'Oops! We seem to have encountered an error. Head back to the home page :)'
-#     createLog.log_error(request.path, 500, 'Internal Server Error')
-#     title = 'Error 500'
-#     admin = sessionInfo["isAdmin"]
-#     return render_template('error.html', msg=msg, admin=admin, title=title)
+@app.errorhandler(500)
+def error500(e):
+    msg = 'Oops! We seem to have encountered an error. Head back to the home page :)'
+    title = 'Error 500'
+    return render_template('error.html', msg=msg, title=title)
 
 if __name__ == "__main__":
     app.run(debug=True)
