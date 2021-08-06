@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, \
-    send_from_directory, session, get_flashed_messages, abort, Response
-from flask_login import current_user
+    send_from_directory, session, get_flashed_messages, abort
 from flask_talisman import Talisman
 from flask_principal import Principal, Permission, RoleNeed, \
     identity_loaded  # flask principal for broken access control
@@ -12,14 +11,12 @@ from django.contrib.auth.decorators import login_required
 # file uploads
 from werkzeug.utils import secure_filename
 import imghdr
-
 import os
 import base64
 import secrets  # for the otp token
 from flask_mail import Mail, Message
 import sys
 import DatabaseManager
-
 
 # Do set this
 # os.environ['DB_USERNAME'] = 'ASPJuser'
@@ -44,7 +41,6 @@ print(tupleCursor)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
-
 # load the extension
 principals = Principal(app)
 
@@ -85,7 +81,6 @@ talisman = Talisman(app, content_security_policy=csp, content_security_policy_no
 # print(os.environ['MAIL_PASSWORD'])
 
 
-
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
     MAIL_PORT=587,
@@ -97,7 +92,9 @@ app.config.update(
     MAIL_SUPPRESS_SEND=False,
     MAIL_ASCII_ATTACHMENTS=True,
     # Directory for admins to refer files (Files) #inside has session logs
-    UPLOAD_FOLDER="templates\Files"
+    UPLOAD_FOLDER="templates\Files",
+    permanent=True,
+    expirydate=None
 )
 cursor = db.cursor()
 
@@ -125,19 +122,29 @@ def validate_image(stream):
         return None
     return '.' + (format if format != 'jpeg' else 'jpg')
 
+
+
 def custom_login_required(f):
     @wraps(f)
     def wrap(*args,**kwargs):
-        print(session)
-        print(app.permanent_session_lifetime)
-        if 'login' not in session and 'csrf_token' not in session:
-            flash("Modification of cookie detected")
+        if session is None:
+            return redirect(url_for('login'))
+
+        if app.config['expirydate'] is not None and app.config['expirydate']<= datetime.utcnow():
+            flash('sesison expired','warning')
+            app.config['expirydate']=None
+            return redirect(url_for('login'))
+
+        if session.get('csrf_token') is None:
+            print('session modifed')
             return redirect(url_for('login'))
 
         if 'login' not in session or session['login']!=True:
-            flash("Please log in to access this page")
+            flash("Please log in to access this page","warning")
             return redirect(url_for('login'))
+
         return f(*args,**kwargs)
+
     return wrap
 
 # broken access control fix
@@ -250,11 +257,8 @@ def postVote():
 @custom_login_required
 @app.route('/commentVote', methods=["GET", "POST"])
 def commentVote():
-    return make_response(jsonify({'message': 'Please log in to vote.'}), 401)
-
     data = request.get_json(force=True)
     currentVote = DatabaseManager.get_user_comment_vote(str(session.get('userID')), data['commentID'])
-
     if currentVote == None:
         if data['voteValue'] == '1':
             toggleUpvote = True
@@ -609,6 +613,10 @@ def login():
                 tupleCursor.execute(sql, val)
                 db.commit()
                 flash('Welcome! You are now logged in as %s.' % (session['username']), 'success')
+                session.permanent = True
+                app.permanent_session_lifetime = timedelta(seconds=20)
+                app.config['expirydate']=app.session_interface.get_expiration_time(app,session)
+                print('here is login')
                 if findAdmin != None:
                     session['isAdmin'] = True
                     return redirect('/adminHome')
@@ -631,6 +639,7 @@ def logout():
     session['login'] = False
     session['userID'] = 0
     session['username'] = ''
+    app.config['expirydate']=None
     return redirect("/home")
     # return render_template('home.html', timed_out=timed_out)
 
@@ -1661,10 +1670,11 @@ def replyFeedback(feedbackID):
 # flask session timeout
 @app.before_request
 def make_session_permanent():
-    session_modified = True
-    session_permanent = True
-    app.permanent_session_lifetime = timedelta(seconds=3000)
-    # flash('Session timeout, please re-login.', 'warning')     # flashing too many times
+    pass
+
+@app.after_request
+def hello(response):
+    return response
 
 
 # may not need this but i leave it here if ur need error 404
