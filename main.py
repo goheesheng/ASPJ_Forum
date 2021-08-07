@@ -1,22 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, \
     send_from_directory, session, get_flashed_messages, abort
 from flask_talisman import Talisman
-from flask_principal import Principal, Permission, RoleNeed, \
-    identity_loaded  # flask principal for broken access control
 from functools import wraps
 import mysql.connector, re, random
-import Forms
 from datetime import datetime, timedelta  # for session timeout
-from django.contrib.auth.decorators import login_required
 # file uploads
 from werkzeug.utils import secure_filename
-import imghdr
-import os
-import base64
-import secrets  # for the otp token
+import imghdr,os,base64,secrets,sys,DatabaseManager,Forms,logging
+from logging.handlers import SMTPHandler
 from flask_mail import Mail, Message
-import sys
-import DatabaseManager
+
 
 # Do set this
 # os.environ['DB_USERNAME'] = 'ASPJuser'
@@ -41,11 +34,7 @@ print(tupleCursor)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
-# load the extension
-principals = Principal(app)
 
-# create a permission with a single Need, in this case a RoleNeed.
-admin_permission = Permission(RoleNeed('admin'))
 
 # line 42 - 43 For file upload
 app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024
@@ -97,15 +86,37 @@ app.config.update(
     expirydate=None
 )
 cursor = db.cursor()
-
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 mail = Mail(app)
 
+#logging scheninagans
+#serialization loggercode
+serializationlogger=logging.getLogger(__name__)
+serializationlogger.setLevel(logging.DEBUG)
+formatter=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
+file_handler=logging.FileHandler('serialization.log')
+file_handler.setFormatter(formatter)
+serializationlogger.addHandler(file_handler)
 
-# app.permanent_session_lifetime = timedelta(seconds=5)
-# # if 'Session timeout, please re-login.' not in get_flashed_messages() and (request.referrer != request.base_url+"/login?next=%2Flogout" or '/static/' not in request.path):
-# #     print("entered")
-# # flash('Session timeout, please re-login.','warning')
+#loginsystemlogger
+loginlogger=logging.getLogger(__name__)
+loginlogger.setLevel(logging.DEBUG)
+formatter=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
+file_handler=logging.FileHandler('logging.log')
+file_handler.setFormatter(formatter)
+serializationlogger.addHandler(file_handler)
+
+
+
+class customFiler(logging.Filter):
+    def __init__(self,ipaddress,username='AnnoynomousUser'):
+        self.username=username
+        self.ipaddress=ipaddress
+
+    def filter(self,record):
+        record.ipaddress=self.ipaddress
+        record.username=self.username
+        return True
 
 #For file upload
 
@@ -137,6 +148,16 @@ def custom_login_required(f):
 
         if session.get('csrf_token') is None:
             print('session modifed')
+            ipaddress=request.remote_addr
+            if app.config['lastusername'] is not None:
+                print('hello world')
+                filter=customFiler(ipaddress,app.config['lastusername'])
+            else:
+                filter = customFiler(ipaddress)
+
+
+            serializationlogger.addFilter(filter)
+            serializationlogger.warning('Cookie has been modified')
             return redirect(url_for('login'))
 
         if 'login' not in session or session['login']!=True:
@@ -587,14 +608,13 @@ def login():
             val = (loginForm.username.data,)
             dictCursor.execute(sql, val)
             findUser = dictCursor.fetchone()
-            if findUser == None:
+            if findUser ==None  or loginForm.password.data != findUser["Password"]:
                 loginForm.password.errors.append('Wrong username or password.')
                 tries.add_tries(1)
-
-            elif loginForm.password.data != findUser["Password"]:
-
-                loginForm.password.errors.append('Wrong username or password.')
-                tries.add_tries(1)
+                ipaddress = request.remote_addr
+                filter = customFiler(ipaddress,"Anonymous")
+                serializationlogger.addFilter(filter)
+                serializationlogger.info(f'Login attempt of {tries.get_tries()}')
 
             else:
                 tries.reset_tries()
@@ -616,7 +636,7 @@ def login():
                 session.permanent = True
                 app.permanent_session_lifetime = timedelta(seconds=20)
                 app.config['expirydate']=app.session_interface.get_expiration_time(app,session)
-                print('here is login')
+                app.config['lastusername']=session['username']
                 if findAdmin != None:
                     session['isAdmin'] = True
                     return redirect('/adminHome')
@@ -640,6 +660,7 @@ def logout():
     session['userID'] = 0
     session['username'] = ''
     app.config['expirydate']=None
+    app.config['lastusername']=None
     return redirect("/home")
     # return render_template('home.html', timed_out=timed_out)
 
