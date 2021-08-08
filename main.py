@@ -88,23 +88,23 @@ app.config.update(
 cursor = db.cursor()
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 mail = Mail(app)
-
+#
 #logging scheninagans
 #serialization loggercode
-serializationlogger=logging.getLogger(__name__)
+serializationlogger=logging.getLogger(__name__+"serializer")
 serializationlogger.setLevel(logging.DEBUG)
-formatter=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
-file_handler=logging.FileHandler('logs/serialization.txt')
-file_handler.setFormatter(formatter)
-serializationlogger.addHandler(file_handler)
-
+formatterserialize=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
+file_handlerserialize=logging.FileHandler('logs/serialization.txt')
+file_handlerserialize.setFormatter(formatterserialize)
+serializationlogger.addHandler(file_handlerserialize)
+#
 #loginsystemlogger
-loginlogger=logging.getLogger(__name__)
+loginlogger=logging.getLogger(__name__+"login")
 loginlogger.setLevel(logging.DEBUG)
-formatter=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
-file_handler=logging.FileHandler('logs/login.txt')
-file_handler.setFormatter(formatter)
-serializationlogger.addHandler(file_handler)
+formatterlogin=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
+file_handler_login=logging.FileHandler('logs/login.txt')
+file_handler_login.setFormatter(formatterlogin)
+loginlogger.addHandler(file_handler_login)
 
 
 
@@ -613,8 +613,8 @@ def login():
                 tries.add_tries(1)
                 ipaddress = request.remote_addr
                 filter = customFiler(ipaddress,"Anonymous")
-                serializationlogger.addFilter(filter)
-                serializationlogger.info(f'Login attempt of {tries.get_tries()}')
+                loginlogger.addFilter(filter)
+                loginlogger.info(f'Login attempt of {tries.get_tries()}')
 
             else:
                 tries.reset_tries()
