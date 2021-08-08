@@ -94,7 +94,7 @@ mail = Mail(app)
 serializationlogger=logging.getLogger(__name__)
 serializationlogger.setLevel(logging.DEBUG)
 formatter=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
-file_handler=logging.FileHandler('serialization.log')
+file_handler=logging.FileHandler('logs/serialization.txt')
 file_handler.setFormatter(formatter)
 serializationlogger.addHandler(file_handler)
 
@@ -102,7 +102,7 @@ serializationlogger.addHandler(file_handler)
 loginlogger=logging.getLogger(__name__)
 loginlogger.setLevel(logging.DEBUG)
 formatter=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
-file_handler=logging.FileHandler('logging.log')
+file_handler=logging.FileHandler('logs/login.txt')
 file_handler.setFormatter(formatter)
 serializationlogger.addHandler(file_handler)
 
@@ -1687,16 +1687,10 @@ def replyFeedback(feedbackID):
     return render_template('replyFeedback.html', currentPage='replyFeedback', **session, replyForm=replyForm,
                            feedbackList=feedbackList)
 
-
-# flask session timeout
-@app.before_request
-def make_session_permanent():
+@app.route('/replyFeedback/<feedbackID>', methods=["GET", "POST"])
+@custom_login_required
+def logfilesviewing():
     pass
-
-@app.after_request
-def hello(response):
-    return response
-
 
 # may not need this but i leave it here if ur need error 404
 @app.errorhandler(404)
