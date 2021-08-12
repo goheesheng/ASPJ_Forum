@@ -9,7 +9,28 @@ from werkzeug.utils import secure_filename
 import imghdr,os,base64,secrets,sys,DatabaseManager,Forms,logging
 from logging.handlers import SMTPHandler
 from flask_mail import Mail, Message
+from flask import Flask, redirect, request, url_for
+from flask_login import (
+    LoginManager,
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
 
+
+from oauthlib.oauth2 import WebApplicationClient
+import requests
+
+GOOGLE_CLIENT_ID ="712694618800-4dh6s5mhdl62fhrbafnedkpbqggj7ome.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "E7vsZe1K44KoZofsH69hZSlH"
+GOOGLE_DISCOVERY_URL = (
+    "https://accounts.google.com/.well-known/openid-configuration"
+)
+
+print(GOOGLE_CLIENT_ID)
+
+client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 # Do set this
 # os.environ['DB_USERNAME'] = 'ASPJuser'
@@ -54,7 +75,7 @@ csp = {
         'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
         'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css',
         'http://127.0.0.1:5000/templates/login.html',
-
+        'https://accounts.google.com/gsi/client',
 
     ],
     #'img-src': 'http://127.0.0.1:5000/templates/login.html',
@@ -88,24 +109,24 @@ app.config.update(
 cursor = db.cursor()
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 mail = Mail(app)
-# #
-# #logging scheninagans
-# #serialization loggercode
-# serializationlogger=logging.getLogger(__name__+"serializer")
-# serializationlogger.setLevel(logging.DEBUG)
-# formatterserialize=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
-# file_handlerserialize=logging.FileHandler('logs/serialization.txt')
-# file_handlerserialize.setFormatter(formatterserialize)
-# serializationlogger.addHandler(file_handlerserialize)
-# #
-# #loginsystemlogger
-# loginlogger=logging.getLogger(__name__+"login")
-# loginlogger.setLevel(logging.DEBUG)
-# formatterlogin=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
-# file_handler_login=logging.FileHandler('logs/login.txt')
-# file_handler_login.setFormatter(formatterlogin)
-# loginlogger.addHandler(file_handler_login)
-#
+
+#logging scheninagans
+#serialization loggercode
+serializationlogger=logging.getLogger(__name__+"serializer")
+serializationlogger.setLevel(logging.DEBUG)
+formatterserialize=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
+file_handlerserialize=logging.FileHandler('logs/serialization.txt')
+file_handlerserialize.setFormatter(formatterserialize)
+serializationlogger.addHandler(file_handlerserialize)
+
+#loginsystemlogger
+loginlogger=logging.getLogger(__name__+"login")
+loginlogger.setLevel(logging.DEBUG)
+formatterlogin=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
+file_handler_login=logging.FileHandler('logs/login.txt')
+file_handler_login.setFormatter(formatterlogin)
+loginlogger.addHandler(file_handler_login)
+
 
 
 class customFiler(logging.Filter):
@@ -119,6 +140,9 @@ class customFiler(logging.Filter):
         return True
 
 #For file upload
+
+def get_google_provider_cfg():
+    return requests.get(GOOGLE_DISCOVERY_URL).json()
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -214,6 +238,49 @@ def get_all_topics(option):
 def temp():
     flash('Please login to upvote or downvote',"warning")
     return make_response(jsonify(url_for('login')),200)
+import json
+@app.route("/googlelogin/callback")
+def callback():
+    # Get authorization code Google sent back to you
+    code = request.args.get("code")
+    google_provider_cfg = get_google_provider_cfg()
+    token_endpoint = google_provider_cfg["token_endpoint"]
+    # Prepare and send a request to get tokens! Yay tokens!
+    token_url, headers, body = client.prepare_token_request(
+        token_endpoint,
+        authorization_response=request.url,
+        redirect_url=request.base_url,
+        code=code
+    )
+    token_response = requests.post(
+        token_url,
+        headers=headers,
+        data=body,
+        auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+    )
+
+    # Parse the tokens!
+    client.parse_request_body_response(json.dumps(token_response.json()))
+    userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
+    uri, headers, body = client.add_token(userinfo_endpoint)
+    userinfo_response = requests.get(uri, headers=headers, data=body)
+    if userinfo_response.json().get("email_verified"):
+        unique_id = userinfo_response.json()["sub"]
+        users_email = userinfo_response.json()["email"]
+        picture = userinfo_response.json()["picture"]
+        users_name = userinfo_response.json()["given_name"]
+    else:
+        return "User email not available or not verified by Google.", 400
+    print( userinfo_response.json().get("email_verified"))
+    print(userinfo_response.json())
+    print('logged in')
+
+    # insert sql statement
+
+    session['login']=True
+    session['isAdmin']=False
+    return redirect(url_for("home"))
+
 
 @custom_login_required
 @app.route('/postVote', methods=["GET", "POST"])
@@ -562,6 +629,7 @@ def addPost():
 @custom_login_required
 @app.route('/feedback', methods=["GET", "POST"])
 def feedback():
+    print(session)
     feedbackForm = Forms.FeedbackForm(request.form)
     feedbackForm.userID.data = session.get('userID')
     if request.method=="GET":
@@ -584,6 +652,17 @@ def feedback():
         return redirect("/home")
     return render_template('feedback.html', currentPage='feedback', **session, feedbackForm=feedbackForm)
 
+@app.route('/googlelogin',methods=["GET","POST"])
+def googlelogin():
+    google_provider_cfg = get_google_provider_cfg()
+    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
+    request_uri = client.prepare_request_uri(
+        authorization_endpoint,
+        redirect_uri=request.base_url + "/callback",
+        scope=["openid", "email", "profile"],
+    )
+    return redirect(request_uri)
+
 
 @app.route('/login', methods=["GET", "POST"])
 def login():
@@ -593,6 +672,7 @@ def login():
     # if form is submitted
     loginForm = Forms.LoginForm(request.form)
     print(get_flashed_messages())
+
     if request.method=="GET":
         session['csrf_token']= base64.b64encode(os.urandom(16))
 
@@ -1708,4 +1788,4 @@ def error500(e):
     return render_template('error.html', msg=msg, title=title)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True,ssl_context='adhoc')

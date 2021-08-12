@@ -1,12 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Login{% endblock %}
-{% block style %}{% endblock %}
+<!--{% block style %}{% endblock %}-->
 
 {% block content %}
 {% from "includes/_formhelper.html" import render_field %}
 {% from "includes/_formhelper.html" import render_field_no_label %}
 
 {% from "includes/_flash.html" import flash %}
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <div class="container mt-4">
   <div class="row justify-content-center">
@@ -16,7 +18,7 @@
     <div class="col-md-6">
       <h1>Login</h1>
 
-      {% autoescape True %}
+      {% autoescape False %}
       <form method="POST" class="mt-4">
 
         <div class="form-group">
@@ -31,13 +33,27 @@
           {{render_field(loginForm.password, class= "form-control")}}
         </div>
 
-<!--        <p id="text" style="display: none; color:red;">WARNING! Caps lock is ON.</p>-->
+        <p id="text" style="display: none; color:red;">WARNING! Caps lock is ON.</p>
 
         <p class="text-p" style="text-align:center;color:#0645AD"> <a href="/forgetpassword">Forgot password?</a></p>
 
         <div id="countdown"></div>
 
         <p>Don't have an account? <a href="/signup">Sign Up</a></p>
+
+        <div class="row">
+    <div class="col-md-3">
+      <a class="btn btn-outline-dark" href="/googlelogin" role="button" style="text-transform:none" >
+        <img width="20px" style="margin-bottom:3px; margin-right:5px" alt="Google sign-in" src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png" />
+        Login with Google
+      </a>
+    </div>
+  </div>
+
+        <button onclick="home()"></button>
+
+
+        <p></p>
 
         <div class="form-group">
           <input id="btn" type="submit" class="btn btn-success">
@@ -48,7 +64,11 @@
   </div> <!--Row-->
 </div> <!--Container-->
 
-<script nonce="{{ csp_nonce() }}">
+<script src="{{csp_nonce()}}">
+function home(){
+    window.location.replace("https://127.0.0.1:5000/googlelogin");
+}
+
 var input = document.getElementById("btn");
 var input = document.getElementById("username");
 var input = document.getElementById("password");
