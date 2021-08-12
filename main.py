@@ -88,24 +88,24 @@ app.config.update(
 cursor = db.cursor()
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 mail = Mail(app)
+# #
+# #logging scheninagans
+# #serialization loggercode
+# serializationlogger=logging.getLogger(__name__+"serializer")
+# serializationlogger.setLevel(logging.DEBUG)
+# formatterserialize=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
+# file_handlerserialize=logging.FileHandler('logs/serialization.txt')
+# file_handlerserialize.setFormatter(formatterserialize)
+# serializationlogger.addHandler(file_handlerserialize)
+# #
+# #loginsystemlogger
+# loginlogger=logging.getLogger(__name__+"login")
+# loginlogger.setLevel(logging.DEBUG)
+# formatterlogin=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
+# file_handler_login=logging.FileHandler('logs/login.txt')
+# file_handler_login.setFormatter(formatterlogin)
+# loginlogger.addHandler(file_handler_login)
 #
-#logging scheninagans
-#serialization loggercode
-serializationlogger=logging.getLogger(__name__+"serializer")
-serializationlogger.setLevel(logging.DEBUG)
-formatterserialize=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
-file_handlerserialize=logging.FileHandler('logs/serialization.txt')
-file_handlerserialize.setFormatter(formatterserialize)
-serializationlogger.addHandler(file_handlerserialize)
-#
-#loginsystemlogger
-loginlogger=logging.getLogger(__name__+"login")
-loginlogger.setLevel(logging.DEBUG)
-formatterlogin=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
-file_handler_login=logging.FileHandler('logs/login.txt')
-file_handler_login.setFormatter(formatterlogin)
-loginlogger.addHandler(file_handler_login)
-
 
 
 class customFiler(logging.Filter):

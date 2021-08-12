@@ -1,0 +1,6 @@
+Flask==2.0.1
+Flask-Mail==0.9.1
+WTForms==2.3.3
+WTForms-Components==0.10.5
+mysql-connector-python==8.0.26
+flask-talisman==0.8.1
