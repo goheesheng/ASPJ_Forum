@@ -274,11 +274,6 @@ def callback():
     print( userinfo_response.json().get("email_verified"))
     print(userinfo_response.json())
     print('logged in')
-
-    # insert sql statement
-
-    session['login']=True
-    session['isAdmin']=False
     return redirect(url_for("home"))
 
 
@@ -714,7 +709,7 @@ def login():
                 db.commit()
                 flash('Welcome! You are now logged in as %s.' % (session['username']), 'success')
                 session.permanent = True
-                app.permanent_session_lifetime = timedelta(seconds=20)
+                app.permanent_session_lifetime = timedelta(seconds=50)
                 app.config['expirydate']=app.session_interface.get_expiration_time(app,session)
                 app.config['lastusername']=session['username']
                 if findAdmin != None:
