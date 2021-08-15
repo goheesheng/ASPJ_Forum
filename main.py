@@ -28,8 +28,6 @@ GOOGLE_DISCOVERY_URL = (
     "https://accounts.google.com/.well-known/openid-configuration"
 )
 
-print(GOOGLE_CLIENT_ID)
-
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 # Do set this
@@ -127,6 +125,14 @@ file_handler_login=logging.FileHandler('logs/login.txt')
 file_handler_login.setFormatter(formatterlogin)
 loginlogger.addHandler(file_handler_login)
 
+#sqllogger
+sqllogger=logging.getLogger(__name__+"sql")
+sqllogger.setLevel(logging.DEBUG)
+sqlformatter=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s:%(sqlquery)s:%(sqlvalues)s:%(sqlstatement)s')
+file_handler_sql=logging.FileHandler('logs/sql.txt')
+file_handler_sql.setFormatter(sqlformatter)
+sqllogger.addHandler(file_handler_sql)
+
 
 
 class customFiler(logging.Filter):
@@ -138,6 +144,23 @@ class customFiler(logging.Filter):
         record.ipaddress=self.ipaddress
         record.username=self.username
         return True
+
+class sqlFilter(logging.Filter):
+    def __init__(self,ipaddress,sqlquery,sqlvalues,sqlstatement,username='AnnoynomousUser'):
+        self.username=username
+        self.ipaddress=ipaddress
+        self.sqlquery=sqlquery
+        self.sqlvalues=sqlvalues
+        self.sqlstatement=sqlstatement
+
+    def filter(self,record):
+        record.ipaddress=self.ipaddress
+        record.username=self.username
+        record.sqlquery=self.sqlquery
+        record.sqlvalues=self.sqlvalues
+        record.sqlstatement=self.sqlstatement
+        return True
+
 
 #For file upload
 
@@ -164,25 +187,27 @@ def custom_login_required(f):
     def wrap(*args,**kwargs):
         if session is None:
             return redirect(url_for('login'))
-
-        if app.config['expirydate'] is not None and app.config['expirydate']<= datetime.utcnow():
-            flash('sesison expired','warning')
-            app.config['expirydate']=None
+        try:
+            if app.config['expirydate'] is not None and app.config['expirydate']<= datetime.utcnow():
+                flash('sesison expired','warning')
+                app.config['expirydate']=None
+                return redirect(url_for('login'))
+        except:
             return redirect(url_for('login'))
 
         if session.get('csrf_token') is None:
             print('session modifed')
             ipaddress=request.remote_addr
-            if app.config['lastusername'] is not None:
-                print('hello world')
-                filter=customFiler(ipaddress,app.config['lastusername'])
-            else:
-                filter = customFiler(ipaddress)
-
-
-            serializationlogger.addFilter(filter)
-            serializationlogger.warning('Cookie has been modified')
-            return redirect(url_for('login'))
+            try:
+                if app.config['lastusername'] is not None:
+                    filter=customFiler(ipaddress,app.config['lastusername'])
+                else:
+                    filter = customFiler(ipaddress)
+                serializationlogger.addFilter(filter)
+                serializationlogger.warning('Cookie has been modified')
+                return redirect(url_for('login'))
+            except:
+                pass
 
         if 'login' not in session or session['login']!=True:
             flash("Please log in to access this page","warning")
@@ -281,10 +306,21 @@ def callback():
 @app.route('/postVote', methods=["GET", "POST"])
 def postVote():
     data = request.get_json(force=True)
-    currentVote = DatabaseManager.get_user_post_vote(str(session.get('userID')), data['postID'])
+    if data==None or type(data) is not dict:
+        data={}
+
+    try:
+        currentVote = DatabaseManager.get_user_post_vote(str(session.get('userID')), data.get('postID'))
+    except mysql.connector.Error as err:
+        ipaddress = request.remote_addr
+        filter = sqlFilter(ipaddress,"DatabaseManager.get_user_post_vote(str(session.get('userID')),data.get('postID'))",f"{session.get('userID'),data.get('postID')}",f"DatabaseManager.get_user_post_vote({str(session.get('userID'))},{data.get('postID')})" ,f"{session.get('username')}")
+        sqllogger.addFilter(filter)
+        sqllogger.debug(f'SQL Exception of {err}')
+        flash("An unexpected error has occurred")
+        return redirect("/")
 
     if currentVote == None:
-        if data['voteValue'] == '1':
+        if data.get('voteValue') == '1':
             toggleUpvote = True
             toggleDownvote = False
             newVote = 1
@@ -296,13 +332,25 @@ def postVote():
             newVote = -1
             upvoteChange = '0'
             downvoteChange = '+1'
+        try:
+            DatabaseManager.insert_post_vote(str(session.get('userID')), data.get('postID'), data.get('voteValue'))
+        except mysql.connector.Error as err:
+            ipaddress = request.remote_addr
+            filter = sqlFilter(ipaddress,
+                               "DatabaseManager.insert_post_vote(str(session.get('userID')),data.get('postID'),data.get('voteValue'))",
+                               f"{session.get('userID'), data.get('postID'),data.get('voteValue')}",
+                               f"DatabaseManager.insert_post_vote({str(session.get('userID'))},{data.get('postID')},{data.get('voteValue')}",
+                               f"{session.get('username')}")
 
-        DatabaseManager.insert_post_vote(str(session.get('userID')), data['postID'], data['voteValue'])
+            sqllogger.addFilter(filter)
+            sqllogger.debug(f'SQL Exception of {err}')
+            flash("An unexpected error has occurred")
+            return redirect("/")
 
     else:  # If vote for post exists
         if currentVote['Vote'] == 1:
             upvoteChange = '-1'
-            if data['voteValue'] == '1':
+            if data.get('voteValue') == '1':
                 toggleUpvote = True
                 toggleDownvote = False
                 newVote = 0
@@ -315,7 +363,7 @@ def postVote():
 
         else:  # currentVote['Vote']==-1
             downvoteChange = '-1'
-            if data['voteValue'] == '1':
+            if data.get('voteValue')== '1':
                 toggleUpvote = True
                 toggleDownvote = True
                 newVote = 1
@@ -327,12 +375,65 @@ def postVote():
                 upvoteChange = '0'
 
         if newVote == 0:
-            DatabaseManager.delete_post_vote(str(session.get('userID')), data['postID'])
-        else:
-            DatabaseManager.update_post_vote(str(newVote), str(session.get('userID')), data['postID'])
+            try:
+                DatabaseManager.delete_post_vote(str(session.get('userID')), data.get('postID'))
+            except mysql.connector.Error as err:
+                ipaddress = request.remote_addr
+                filter = sqlFilter(ipaddress,
+                                   "DatabaseManager.delete_post_vote(str(session.get('userID')), data.get('postID'))",
+                                   f"{session.get('userID'), data.get('postID')}",
+                                   f"DatabaseManager.delete_post_vote({str(session.get('userID'))},{data.get('postID')})",
+                                   f"{session.get('username')}")
 
-    DatabaseManager.update_overall_post_vote(upvoteChange, downvoteChange, data['postID'])
-    updatedVoteTotal = DatabaseManager.calculate_updated_post_votes(data['postID'])
+                sqllogger.addFilter(filter)
+                sqllogger.debug(f'SQL Exception of {err}')
+                flash("An unexpected error has occurred")
+                return redirect("/")
+        else:
+            try:
+                DatabaseManager.update_post_vote(str(newVote), str(session.get('userID')), data.get('postID'))
+
+            except mysql.connector.Error as err:
+                ipaddress = request.remote_addr
+                filter = sqlFilter(ipaddress,
+                                   "DatabaseManager.update_post_vote(str(newVote), str(session.get('userID')), data.get('postID'))",
+                                   f"{str(newVote), session.get('userid'), data.get('postID'),}",
+                                   f"DatabaseManager.update_post_vote({str(newVote)},{str(session.get('userID'))},{data.get('postID')})",
+                                   f"{session.get('username')}")
+
+                sqllogger.addFilter(filter)
+                sqllogger.debug(f'SQL Exception of {err}')
+                flash("An unexpected error has occurred")
+                return redirect("/")
+    try:
+        DatabaseManager.update_overall_post_vote(upvoteChange, downvoteChange, data.get('postID'))
+    except mysql.connector.Error as err:
+        ipaddress = request.remote_addr
+        filter = sqlFilter(ipaddress,
+                           "DatabaseManager.update_overall_post_vote(upvoteChange, downvoteChange, data.get('postID'))",
+                           f"{upvoteChange, downvoteChange, data.get('postID'),}",
+                           f"DatabaseManager.update_overall_post_vote({str(newVote)},{str(session.get('userID'))},{data.get('postID')})",
+                           f"{session.get('username')}")
+
+        sqllogger.addFilter(filter)
+        sqllogger.debug(f'SQL Exception of {err}')
+        flash("An unexpected error has occurred")
+        return redirect("/")
+    try:
+        updatedVoteTotal = DatabaseManager.calculate_updated_post_votes(data.get('postID'))
+    except mysql.connector.Error as err:
+        ipaddress = request.remote_addr
+        filter = sqlFilter(ipaddress,
+                           "DatabaseManager.calculate_updated_post_votes(data.get('postID'))",
+                           f"{data.get('postID'),}",
+                           f"DatabaseManager.calculate_updated_post_votes({data.get('postID')})",
+                           f"{session.get('username')}")
+
+        sqllogger.addFilter(filter)
+        sqllogger.debug(f'SQL Exception of {err}')
+        flash("An unexpected error has occurred")
+        return redirect("/")
+
     return make_response(jsonify({'toggleUpvote': toggleUpvote, 'toggleDownvote': toggleDownvote
                                      , 'newVote': newVote, 'updatedVoteTotal': updatedVoteTotal,
                                   'postID': data['postID']}), 200)
@@ -341,7 +442,14 @@ def postVote():
 @app.route('/commentVote', methods=["GET", "POST"])
 def commentVote():
     data = request.get_json(force=True)
-    currentVote = DatabaseManager.get_user_comment_vote(str(session.get('userID')), data['commentID'])
+    if data is None or type(data) is not dict:
+        data={}
+    try:
+        currentVote = DatabaseManager.get_user_comment_vote(str(session.get('userID')), data['commentID'])
+    except:
+        flash("An unexpected error has occurred")
+        return redirect("/")
+
     if currentVote == None:
         if data['voteValue'] == '1':
             toggleUpvote = True
@@ -681,8 +789,23 @@ def login():
         else:
             sql = "SELECT UserID, Email, Username, Password FROM user WHERE Username = %s"
             val = (loginForm.username.data,)
-            dictCursor.execute(sql, val)
-            findUser = dictCursor.fetchone()
+            try:
+                dictCursor.execute(sql, val)
+                findUser = dictCursor.fetchone()
+
+            except mysql.connector.Error as err:
+                ipaddress = request.remote_addr
+                filter = sqlFilter(ipaddress,
+                                   sql,
+                                   val,
+                                   dictCursor,
+                                   f"{session.get('username')}")
+
+                sqllogger.addFilter(filter)
+                sqllogger.debug(f'SQL Exception of {err}')
+                flash("An unexpected error has occurred")
+                return redirect("/")
+
             if findUser ==None  or loginForm.password.data != findUser["Password"]:
                 loginForm.password.errors.append('Wrong username or password.')
                 tries.add_tries(1)
@@ -709,7 +832,7 @@ def login():
                 db.commit()
                 flash('Welcome! You are now logged in as %s.' % (session['username']), 'success')
                 session.permanent = True
-                app.permanent_session_lifetime = timedelta(seconds=50)
+                app.permanent_session_lifetime = timedelta(seconds=10)
                 app.config['expirydate']=app.session_interface.get_expiration_time(app,session)
                 app.config['lastusername']=session['username']
                 if findAdmin != None:
