@@ -120,7 +120,7 @@ serializationlogger.addHandler(file_handlerserialize)
 #loginsystemlogger
 loginlogger=logging.getLogger(__name__+"login")
 loginlogger.setLevel(logging.DEBUG)
-formatterlogin=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s')
+formatterlogin=logging.Formatter('%(asctime)s:%(levelname)s:%(message)s:%(ipaddress)s:%(username)s:%(password)s')
 file_handler_login=logging.FileHandler('logs/login.txt')
 file_handler_login.setFormatter(formatterlogin)
 loginlogger.addHandler(file_handler_login)
@@ -135,7 +135,19 @@ sqllogger.addHandler(file_handler_sql)
 
 
 
-class customFiler(logging.Filter):
+class loginFilter(logging.Filter):
+    def __init__(self,ipaddress,password,username='AnnoynomousUser'):
+        self.username=username
+        self.ipaddress=ipaddress
+        self.password=password
+
+    def filter(self,record):
+        record.ipaddress=self.ipaddress
+        record.username=self.username
+        record.password=self.password
+        return True
+
+class cookieFilter(logging.Filter):
     def __init__(self,ipaddress,username='AnnoynomousUser'):
         self.username=username
         self.ipaddress=ipaddress
@@ -200,9 +212,9 @@ def custom_login_required(f):
             ipaddress=request.remote_addr
             try:
                 if app.config['lastusername'] is not None:
-                    filter=customFiler(ipaddress,app.config['lastusername'])
+                    filter=cookieFilter(ipaddress,app.config['lastusername'])
                 else:
-                    filter = customFiler(ipaddress)
+                    filter = cookieFilter(ipaddress)
                 serializationlogger.addFilter(filter)
                 serializationlogger.warning('Cookie has been modified')
                 return redirect(url_for('login'))
@@ -810,7 +822,7 @@ def login():
                 loginForm.password.errors.append('Wrong username or password.')
                 tries.add_tries(1)
                 ipaddress = request.remote_addr
-                filter = customFiler(ipaddress,"Anonymous")
+                filter = loginFilter(ipaddress,loginForm.password.data,loginForm.username.data)
                 loginlogger.addFilter(filter)
                 loginlogger.info(f'Login attempt of {tries.get_tries()}')
 
