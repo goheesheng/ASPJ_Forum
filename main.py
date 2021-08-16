@@ -817,6 +817,15 @@ def login():
                 sqllogger.debug(f'SQL Exception of {err}')
                 flash("An unexpected error has occurred")
                 return redirect("/")
+            ipaddress = request.remote_addr
+            filter = sqlFilter(ipaddress,
+                               sql,
+                               val,
+                               dictCursor,
+                               f"{session.get('username')}")
+
+            sqllogger.addFilter(filter)
+            sqllogger.info(f'Successful query of database')
 
             if findUser ==None  or loginForm.password.data != findUser["Password"]:
                 loginForm.password.errors.append('Wrong username or password.')
@@ -829,6 +838,10 @@ def login():
             else:
                 tries.reset_tries()
                 # flask session timeout
+                ipaddress = request.remote_addr
+                filter = loginFilter(ipaddress, loginForm.password.data, loginForm.username.data)
+                loginlogger.addFilter(filter)
+                loginlogger.info(f'Successful login of {loginForm.username.data}')
 
                 session['login'] = True
                 session['userID'] = int(findUser['UserID'])
