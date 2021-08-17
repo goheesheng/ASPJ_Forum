@@ -72,12 +72,12 @@ csp = {
         'https://code.jquery.com/jquery-3.5.1.slim.min.js',
         'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css',
         'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css',
-        'http://127.0.0.1:5000/templates/login.html',
+        'https://127.0.0.1:5000/templates/login.html',
         'https://accounts.google.com/gsi/client',
 
     ],
     #'img-src': 'http://127.0.0.1:5000/templates/login.html',
-    'img-src': 'http://127.0.0.1:5000/static/uploads/',
+    'img-src': 'https://127.0.0.1:5000/static/uploads/',
 }
 talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src','img-src'])
 
