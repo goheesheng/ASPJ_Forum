@@ -22,8 +22,8 @@ from flask_login import (
 from oauthlib.oauth2 import WebApplicationClient
 import requests
 
-GOOGLE_CLIENT_ID ="712694618800-4dh6s5mhdl62fhrbafnedkpbqggj7ome.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "E7vsZe1K44KoZofsH69hZSlH"
+GOOGLE_CLIENT_ID ="something"
+GOOGLE_CLIENT_SECRET = "something"
 GOOGLE_DISCOVERY_URL = (
     "https://accounts.google.com/.well-known/openid-configuration"
 )
@@ -82,8 +82,8 @@ csp = {
 talisman = Talisman(app, content_security_policy=csp, content_security_policy_nonce_in=['script-src','img-src'])
 
 # Do set this, go discord and follow instructions
-# os.environ['MAIL_USERNAME'] = 'appdevescip2003@gmail.com'
-# os.environ['MAIL_PASSWORD'] = 'appdev7181'
+# os.environ['MAIL_USERNAME'] = 'something@gmail.com'
+# os.environ['MAIL_PASSWORD'] = 'something'
 #
 # print(os.environ['MAIL_USERNAME'])
 # print(os.environ['MAIL_PASSWORD'])
@@ -105,7 +105,7 @@ app.config.update(
     expirydate=None
 )
 cursor = db.cursor()
-app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+app.secret_key = b'something'
 mail = Mail(app)
 
 #logging scheninagans
